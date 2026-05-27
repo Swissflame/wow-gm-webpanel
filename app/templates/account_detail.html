@@ -44,6 +44,16 @@
     </label>
     <button class="primary">Speichern</button>
   </form>
+
+  <form method="post" action="/accounts/{{ account.id }}/delete" class="panel account-delete danger">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <h2>Account löschen</h2>
+    <p>Dies löscht den WoW-Account und die Charaktere dieses Accounts auf Normal- und Playerbot-Realm.</p>
+    <label>Zur Bestätigung Accountname eingeben
+      <input name="confirm" placeholder="{{ account.username }}" autocomplete="off" required>
+    </label>
+    <button class="danger-button">Account endgültig löschen</button>
+  </form>
   {% endif %}
 
   <section class="panel">

@@ -1,11 +1,12 @@
-document.addEventListener("submit", (event) => {
+﻿document.addEventListener("submit", (event) => {
   const form = event.target;
   const danger = form.closest(".danger");
-  if (danger && !confirm("Diese Aktion setzt die Webpanel-Konfiguration zurück. Fortfahren?")) {
-    event.preventDefault();
-  }
+  if (!danger) return;
+  const message = form.matches("[action*='/delete']")
+    ? "Diesen Account wirklich endgueltig loeschen? Diese Aktion entfernt auch seine Charaktere."
+    : "Diese Aktion setzt die Webpanel-Konfiguration zurueck. Fortfahren?";
+  if (!confirm(message)) event.preventDefault();
 });
-
 document.addEventListener("click", (event) => {
   const tab = event.target.closest(".gm-tab");
   if (tab) {
@@ -26,6 +27,7 @@ document.addEventListener("click", (event) => {
     else favorites.add(id);
     localStorage.setItem("wowpanel.gmFavorites", JSON.stringify([...favorites]));
     syncFavorites();
+    saveFavorites(favorites);
     return;
   }
   const card = event.target.closest("[data-command]");
@@ -82,6 +84,20 @@ function escapeHtml(value) {
 }
 
 function readFavorites() {
+  const workbench = document.querySelector(".gm-workbench[data-server-favorites]");
+  if (workbench && !workbench.dataset.favoritesLoaded) {
+    workbench.dataset.favoritesLoaded = "1";
+    try {
+      const serverFavorites = JSON.parse(workbench.dataset.serverFavorites || "[]");
+      const localFavorites = JSON.parse(localStorage.getItem("wowpanel.gmFavorites") || "[]");
+      const merged = new Set([...serverFavorites, ...localFavorites]);
+      localStorage.setItem("wowpanel.gmFavorites", JSON.stringify([...merged]));
+      if (localFavorites.length && localFavorites.length !== serverFavorites.length) {
+        setTimeout(() => saveFavorites(merged), 0);
+      }
+      return merged;
+    } catch {}
+  }
   try {
     return new Set(JSON.parse(localStorage.getItem("wowpanel.gmFavorites") || "[]"));
   } catch {
@@ -89,12 +105,22 @@ function readFavorites() {
   }
 }
 
+function saveFavorites(favorites) {
+  const csrf = document.querySelector("input[name='csrf']")?.value;
+  if (!csrf) return;
+  fetch("/gm/favorites", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({ csrf, favorites: [...favorites].join(",") }),
+  }).catch(() => {});
+}
+
 function syncFavorites() {
   const favorites = readFavorites();
   document.querySelectorAll(".favorite-toggle").forEach((button) => {
     const active = favorites.has(button.dataset.favorite);
     button.classList.toggle("active", active);
-    button.textContent = active ? "★" : "☆";
+    button.textContent = active ? "â˜…" : "â˜†";
   });
   const target = document.querySelector("#favoriteActions");
   const empty = document.querySelector("#favoriteEmpty");

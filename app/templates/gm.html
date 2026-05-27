@@ -2,7 +2,7 @@
 {% if source_error %}<section class="notice"><strong>Hinweis</strong><p>Die Rohbefehle konnten nicht aus der World-DB gelesen werden. Die Aktionskarten funktionieren mit der eingebauten AzerothCore-Liste.</p></section>{% endif %}
 {% if character_error %}<section class="notice"><strong>Charakterliste</strong><p>{{ character_error }}</p></section>{% endif %}
 
-<section class="gm-workbench">
+<section class="gm-workbench" data-server-favorites='{{ favorite_ids|tojson }}'>
   <section id="gmResultBox" class="result gm-result {% if not flash %}empty{% endif %}">
     <strong>Ergebnis</strong>
     <p>{% if flash %}{{ flash }}{% else %}Noch kein Befehl ausgeführt. Ergebnisse von GM-Befehlen erscheinen hier.{% endif %}</p>

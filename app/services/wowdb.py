@@ -36,10 +36,10 @@ def rows(mysql_cfg: dict, database: str, sql: str, params: dict | None = None) -
 
 
 def account_by_username(mysql_cfg: dict, auth_db: str, username: str) -> dict | None:
-    sql = """
-    SELECT id, username, sha_pass_hash, salt, verifier, email, last_ip, last_login, locked, online, expansion
-    FROM account WHERE username = :username LIMIT 1
-    """
+    columns = account_table_columns(mysql_cfg, auth_db)
+    wanted = ["id", "username", "sha_pass_hash", "salt", "verifier", "email", "last_ip", "last_login", "locked", "online", "expansion"]
+    selected = [name for name in wanted if name in columns]
+    sql = f"SELECT {', '.join(selected)} FROM account WHERE username = :username LIMIT 1"
     result = rows(mysql_cfg, auth_db, sql, {"username": username.upper()})
     return result[0] if result else None
 
@@ -81,7 +81,7 @@ def online_players(cfg: dict, realm: str = "normal") -> list[dict]:
     return data
 
 
-BOT_ACCOUNT_FILTER = "a.username NOT REGEXP '^(RNDBOT|BOT|PLAYERBOT|AHBOT|ACORE_WEBPANEL)'"
+BOT_ACCOUNT_FILTER = "a.username NOT LIKE '%BOT%' AND a.username <> 'ACORE_WEBPANEL'"
 
 
 def search_accounts(cfg: dict, query: str = "", limit: int = 500, include_bots: bool = False) -> list[dict]:
@@ -214,6 +214,53 @@ def update_account(cfg: dict, account_id: int, email: str, locked: int, expansio
     with engine_for(mysql, auth_db).begin() as conn:
         conn.execute(text(f"UPDATE account SET {assignments} WHERE id=:id"), update_values)
         _set_account_access(conn, int(account_id), int(gm_level_value))
+
+
+def delete_account(cfg: dict, account_id: int) -> str:
+    mysql = cfg["mysql"]
+    auth_db = mysql["auth_db"]
+    with engine_for(mysql, auth_db).begin() as conn:
+        account = conn.execute(text("SELECT id, username FROM account WHERE id=:id"), {"id": int(account_id)}).mappings().first()
+        if not account:
+            raise ValueError("Account nicht gefunden.")
+        username = account["username"]
+        conn.execute(text("DELETE FROM account_access WHERE id=:id"), {"id": int(account_id)})
+        conn.execute(text("DELETE FROM account_banned WHERE id=:id"), {"id": int(account_id)})
+        conn.execute(text("DELETE FROM account WHERE id=:id"), {"id": int(account_id)})
+    for char_db in [mysql["characters_db"], mysql["pb_characters_db"]]:
+        delete_account_characters(mysql, char_db, account_id)
+    return username
+
+
+def delete_account_characters(mysql: dict, char_db: str, account_id: int):
+    cleanup = {
+        "character_account_data": "guid", "character_achievement": "guid", "character_achievement_progress": "guid",
+        "character_action": "guid", "character_aura": "guid", "character_banned": "guid",
+        "character_battleground_data": "guid", "character_declinedname": "guid",
+        "character_equipmentsets": "guid", "character_gifts": "guid", "character_glyphs": "guid",
+        "character_homebind": "guid", "character_instance": "guid", "character_inventory": "guid",
+        "character_pet": "owner", "character_queststatus": "guid", "character_queststatus_daily": "guid",
+        "character_queststatus_monthly": "guid", "character_queststatus_rewarded": "guid",
+        "character_queststatus_seasonal": "guid", "character_queststatus_weekly": "guid",
+        "character_reputation": "guid", "character_skills": "guid", "character_social": "guid",
+        "character_spell": "guid", "character_spell_cooldown": "guid", "character_stats": "guid",
+        "character_talent": "guid", "character_void_storage": "guid", "corpse": "guid",
+        "group_member": "memberGuid", "guild_member": "guid", "petition_sign": "playerguid",
+    }
+    with engine_for(mysql, char_db).begin() as conn:
+        guids = [row["guid"] for row in conn.execute(text("SELECT guid FROM characters WHERE account=:id"), {"id": int(account_id)}).mappings()]
+        for guid in guids:
+            for table, column in cleanup.items():
+                try:
+                    conn.execute(text(f"DELETE FROM {table} WHERE {column}=:guid"), {"guid": guid})
+                except Exception:
+                    pass
+            try:
+                conn.execute(text("DELETE mi FROM mail_items mi JOIN mail m ON m.id = mi.mail_id WHERE m.receiver=:guid"), {"guid": guid})
+                conn.execute(text("DELETE FROM mail WHERE receiver=:guid"), {"guid": guid})
+            except Exception:
+                pass
+        conn.execute(text("DELETE FROM characters WHERE account=:id"), {"id": int(account_id)})
 
 
 def _set_account_access(conn, account_id: int, gm_level_value: int):

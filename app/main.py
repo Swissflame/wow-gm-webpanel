@@ -1,5 +1,5 @@
 from fastapi import FastAPI, Request, Depends, Form, HTTPException
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
@@ -11,7 +11,7 @@ from .database import init_db, get_db
 from .models import PanelUser
 from .settings import get_settings
 from .security import csrf_token, verify_csrf, hash_password, verify_password, verify_azeroth_password
-from .services.config_store import bootstrap_defaults, all_config, set_config
+from .services.config_store import bootstrap_defaults, all_config, get_config, set_config
 from .services.audit import log_action
 from .services import wowdb
 from .services.realm import REALMS, selected_realm, realm_cfg
@@ -51,8 +51,10 @@ def create_app() -> FastAPI:
     app.add_api_route("/accounts/create", account_create, methods=["POST"])
     app.add_api_route("/accounts/{account_id}", account_detail, methods=["GET"], response_class=HTMLResponse)
     app.add_api_route("/accounts/{account_id}/save", account_save, methods=["POST"])
+    app.add_api_route("/accounts/{account_id}/delete", account_delete, methods=["POST"])
     app.add_api_route("/characters", characters, methods=["GET"], response_class=HTMLResponse)
     app.add_api_route("/gm", gm_console, methods=["GET"], response_class=HTMLResponse)
+    app.add_api_route("/gm/favorites", gm_favorites, methods=["POST"])
     app.add_api_route("/gm/run", gm_run, methods=["POST"])
     app.add_api_route("/gm/action", gm_action, methods=["POST"])
     app.add_api_route("/server", server, methods=["GET"], response_class=HTMLResponse)
@@ -256,6 +258,22 @@ def account_save(request: Request, account_id: int, db: Session = Depends(get_db
     return RedirectResponse(f"/accounts/{account_id}", status_code=303)
 
 
+def account_delete(request: Request, account_id: int, db: Session = Depends(get_db), user: PanelUser = Depends(require_level(3)),
+                   csrf: str = Form(...), confirm: str = Form("")):
+    if not verify_csrf(request, csrf):
+        raise HTTPException(400, "CSRF")
+    account = wowdb.account_detail(all_config(db), account_id)
+    if not account:
+        raise HTTPException(404, "Account nicht gefunden")
+    if confirm.strip().upper() != account["username"].upper():
+        request.session["account_flash"] = "Löschen abgebrochen: Accountname wurde nicht korrekt bestätigt."
+        return RedirectResponse(f"/accounts/{account_id}", status_code=303)
+    username = wowdb.delete_account(all_config(db), account_id)
+    log_action(db, user.id, "account_delete", str(account_id), username, request.client.host if request.client else None)
+    request.session["account_error"] = f"Account {username} wurde gelöscht."
+    return RedirectResponse("/accounts", status_code=303)
+
+
 def characters(request: Request, q: str = "", db: Session = Depends(get_db), user: PanelUser = Depends(require_level(1))):
     try:
         items, error = wowdb.search_characters(all_config(db), q, realm=selected_realm(request)), None
@@ -299,6 +317,7 @@ def gm_console(request: Request, db: Session = Depends(get_db), user: PanelUser 
     active_tab = request.query_params.get("tab") or request.session.pop("gm_active_tab", None) or "favorites"
     if active_tab not in {tab["id"] for tab in tab_data}:
         active_tab = "favorites"
+    favorite_ids = get_config(db, f"gm_favorites_{user.id}", []) or []
     return render(request, "gm.html", {
         "title": "GM-Befehle",
         "commands": commands,
@@ -310,7 +329,17 @@ def gm_console(request: Request, db: Session = Depends(get_db), user: PanelUser 
         "tabs": tab_data,
         "flash": flash,
         "active_tab": active_tab,
+        "favorite_ids": favorite_ids,
     }, db)
+
+
+async def gm_favorites(request: Request, db: Session = Depends(get_db), user: PanelUser = Depends(current_user)):
+    form = await request.form()
+    if not verify_csrf(request, form.get("csrf")):
+        raise HTTPException(400, "CSRF")
+    favorites = [item for item in str(form.get("favorites", "")).split(",") if item]
+    set_config(db, f"gm_favorites_{user.id}", favorites)
+    return JSONResponse({"ok": True, "favorites": favorites})
 
 
 async def gm_action(request: Request, db: Session = Depends(get_db), user: PanelUser = Depends(require_level(1))):

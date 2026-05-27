@@ -7,6 +7,15 @@
     : "Diese Aktion setzt die Webpanel-Konfiguration zurueck. Fortfahren?";
   if (!confirm(message)) event.preventDefault();
 });
+
+document.addEventListener("keydown", (event) => {
+  if (event.key !== "Enter") return;
+  const form = event.target.closest?.("form.login-form");
+  if (!form) return;
+  event.preventDefault();
+  form.requestSubmit();
+});
+
 document.addEventListener("click", (event) => {
   const tab = event.target.closest(".gm-tab");
   if (tab) {

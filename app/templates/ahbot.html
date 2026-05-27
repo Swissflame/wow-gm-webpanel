@@ -33,9 +33,9 @@
     <section class="ahbot-tabs">
       {% for group in groups %}
       <details class="panel ahbot-group" {% if loop.first %}open{% endif %}>
-        <summary>{{ group.label }} <span>{{ group.items|length }}</span></summary>
+        <summary>{{ group["label"] }} <span>{{ group["items"]|length }}</span></summary>
         <div class="ahbot-fields">
-          {% for field in group.items %}
+          {% for field in group["items"] %}
           <label class="ahbot-field">
             <span>{{ field.label }}</span>
             {% if field.type == "boolean" %}

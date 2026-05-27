@@ -38,16 +38,16 @@
           {% for field in group["items"] %}
           <label class="ahbot-field">
             <span>{{ field.label }}</span>
-            {% if field.type == "boolean" %}
-            <select name="{{ field.key }}" {% if user.gm_level < 3 %}disabled{% endif %}>
-              <option value="0" {% if field.value in ["0","false","False"] %}selected{% endif %}>Nein / deaktiviert</option>
-              <option value="1" {% if field.value in ["1","true","True"] %}selected{% endif %}>Ja / aktiviert</option>
-            </select>
-            {% elif field.key == "AuctionHouseBot.ElapsingTimeClass" %}
+            {% if field.type == "enum_duration" %}
             <select name="{{ field.key }}" {% if user.gm_level < 3 %}disabled{% endif %}>
               <option value="0" {% if field.value == "0" %}selected{% endif %}>Lang: 1 bis 3 Tage</option>
               <option value="1" {% if field.value == "1" %}selected{% endif %}>Mittel: 1 bis 24 Stunden</option>
               <option value="2" {% if field.value == "2" %}selected{% endif %}>Kurz: 10 bis 60 Minuten</option>
+            </select>
+            {% elif field.type == "boolean" %}
+            <select name="{{ field.key }}" {% if user.gm_level < 3 %}disabled{% endif %}>
+              <option value="0" {% if field.value in ["0","false","False"] %}selected{% endif %}>Nein / deaktiviert</option>
+              <option value="1" {% if field.value in ["1","true","True"] %}selected{% endif %}>Ja / aktiviert</option>
             </select>
             {% elif field.type == "number" %}
             <input name="{{ field.key }}" type="number" step="any" value="{{ field.value }}" {% if user.gm_level < 3 %}disabled{% endif %}>

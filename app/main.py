@@ -21,7 +21,7 @@ from .services.gm import allowed_commands, normalize_db_commands, record_command
 from .services.gm_actions import TABS, build_command, event_actions, localized_actions
 from .services.gm_transport import execute_gm_command
 from .services.server_metrics import collect_server_overview
-from .services.ahbot_config import grouped_fields, load_ahbot, reset_ahbot, save_ahbot, summarize
+from .services.ahbot_config import grouped_fields, load_ahbot, reset_ahbot, save_ahbot, schedule_realm_restart, summarize
 from .i18n import translate
 
 BASE = Path(__file__).resolve().parent
@@ -558,12 +558,18 @@ async def ahbot_save(request: Request, db: Session = Depends(get_db), user: Pane
         details = "\n".join(f"{key}: {old} -> {new}" for key, old, new in changes)
         log_action(db, user.id, "ahbot_config_change", path, details, request.client.host if request.client else None)
         notify = f"Serverkonfiguration wurde geändert. Server startet in {restart_delay} Sekunden neu."
-        notify_result = execute_gm_command(db, cfg, realm, f"notify {notify}")
-        restart_result = execute_gm_command(db, cfg, realm, f"server restart {restart_delay}")
+        try:
+            notify_result = execute_gm_command(db, cfg, realm, f"notify {notify}")
+        except Exception as exc:
+            notify_result = f"Spielerwarnung konnte nicht per SOAP/RA gesendet werden: {exc}"
+        try:
+            restart_result = schedule_realm_restart(cfg, realm, restart_delay)
+        except Exception as exc:
+            restart_result = f"SSH-Neustart konnte nicht geplant werden: {exc}"
         record_command(db, user.id, realm, f"notify {notify}", notify_result)
-        record_command(db, user.id, realm, f"server restart {restart_delay}", restart_result)
+        record_command(db, user.id, realm, f"ssh restart {restart_delay}", restart_result)
         log_action(db, user.id, "ahbot_apply_restart", realm, f"{notify_result}\n{restart_result}", request.client.host if request.client else None)
-        request.session["ahbot_flash"] = f"{len(changes)} Einstellung(en) gespeichert. Neustart in {restart_delay} Sekunden geplant."
+        request.session["ahbot_flash"] = f"{len(changes)} Einstellung(en) gespeichert. {notify_result} {restart_result}"
     else:
         request.session["ahbot_flash"] = "Keine Änderungen gefunden."
     return RedirectResponse("/ahbot", status_code=303)

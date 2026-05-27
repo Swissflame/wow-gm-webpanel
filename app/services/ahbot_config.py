@@ -44,8 +44,8 @@ META = {
     "AuctionHouseBot.ElapsingTimeClass": ("Auktionsdauer-Klasse", "0 = lang, 1 = mittel, 2 = kurz. Bestimmt, wie lange Bot-Auktionen laufen."),
     "AuctionHouseBot.VendorItems": ("Händler-Items zulassen", "Items einschließen, die regulär bei NPC-Händlern kaufbar sind."),
     "AuctionHouseBot.VendorTradeGoods": ("Händler-Handwerkswaren zulassen", "Handwerkswaren einschließen, die bei NPC-Händlern kaufbar sind."),
-    "AuctionHouseBot.LootItems": ("Loot-Items zulassen", "Items einschließen, die durch Loot oder Angeln erhältlich sind."),
-    "AuctionHouseBot.LootTradeGoods": ("Loot-Handwerkswaren zulassen", "Handwerkswaren einschließen, die durch Loot oder Angeln erhältlich sind."),
+    "AuctionHouseBot.LootItems": ("Beute-Items zulassen", "Items einschließen, die durch Beute, Drops oder Sammeln erhältlich sind."),
+    "AuctionHouseBot.LootTradeGoods": ("Beute-Handwerkswaren zulassen", "Handwerkswaren einschließen, die durch Beute, Drops oder Sammeln erhältlich sind."),
     "AuctionHouseBot.OtherItems": ("Sonstige Items zulassen", "Sonstige nicht klar eingeordnete Items einschließen."),
     "AuctionHouseBot.OtherTradeGoods": ("Sonstige Handwerkswaren zulassen", "Sonstige Trade-Goods einschließen."),
     "AuctionHouseBot.ProfessionItems": ("Berufsitems zulassen", "Items einschließen, die für Berufe benötigt werden."),
@@ -63,6 +63,34 @@ META = {
     "AuctionHouseBot.DisableKeys": ("Schlüssel blockieren", "Schlüssel werden ausgeschlossen."),
     "AuctionHouseBot.DisableDuration": ("Zeitlich begrenzte Items blockieren", "Items mit Ablaufdauer werden ausgeschlossen."),
     "AuctionHouseBot.DisableBOP_Or_Quest_NoReqLevel": ("Problematische BoP/Questitems blockieren", "Blockiert BoP- oder Questitems ohne passende Levelanforderung."),
+    "AuctionHouseBot.DisableWarriorItems": ("Krieger-Items blockieren", "Items, die speziell für Krieger gedacht sind, werden ausgeschlossen."),
+    "AuctionHouseBot.DisablePaladinItems": ("Paladin-Items blockieren", "Items, die speziell für Paladine gedacht sind, werden ausgeschlossen."),
+    "AuctionHouseBot.DisableHunterItems": ("Jäger-Items blockieren", "Items, die speziell für Jäger gedacht sind, werden ausgeschlossen."),
+    "AuctionHouseBot.DisableRogueItems": ("Schurken-Items blockieren", "Items, die speziell für Schurken gedacht sind, werden ausgeschlossen."),
+    "AuctionHouseBot.DisablePriestItems": ("Priester-Items blockieren", "Items, die speziell für Priester gedacht sind, werden ausgeschlossen."),
+    "AuctionHouseBot.DisableDKItems": ("Todesritter-Items blockieren", "Items, die speziell für Todesritter gedacht sind, werden ausgeschlossen."),
+    "AuctionHouseBot.DisableShamanItems": ("Schamanen-Items blockieren", "Items, die speziell für Schamanen gedacht sind, werden ausgeschlossen."),
+    "AuctionHouseBot.DisableMageItems": ("Magier-Items blockieren", "Items, die speziell für Magier gedacht sind, werden ausgeschlossen."),
+    "AuctionHouseBot.DisableWarlockItems": ("Hexenmeister-Items blockieren", "Items, die speziell für Hexenmeister gedacht sind, werden ausgeschlossen."),
+    "AuctionHouseBot.DisableUnusedClassItems": ("Ungenutzte Klassenitems blockieren", "Items für die ungenutzte Klassen-ID 10 werden ausgeschlossen."),
+    "AuctionHouseBot.DisableDruidItems": ("Druiden-Items blockieren", "Items, die speziell für Druiden gedacht sind, werden ausgeschlossen."),
+    "AuctionHouseBot.DisableItemsBelowLevel": ("Items unter Itemlevel blockieren", "Verhindert Auktionen normaler Items unter diesem Itemlevel. 0 schaltet diese Grenze aus."),
+    "AuctionHouseBot.DisableItemsAboveLevel": ("Items über Itemlevel blockieren", "Verhindert Auktionen normaler Items über diesem Itemlevel. 0 schaltet diese Grenze aus."),
+    "AuctionHouseBot.DisableTGsBelowLevel": ("Handwerkswaren unter Itemlevel blockieren", "Verhindert Auktionen von Trade-Goods unter diesem Itemlevel. 0 schaltet diese Grenze aus."),
+    "AuctionHouseBot.DisableTGsAboveLevel": ("Handwerkswaren über Itemlevel blockieren", "Verhindert Auktionen von Trade-Goods über diesem Itemlevel. 0 schaltet diese Grenze aus."),
+    "AuctionHouseBot.DisableItemsBelowGUID": ("Items unter Entry-ID blockieren", "Verhindert Auktionen normaler Items mit Entry-ID unter diesem Wert. 0 schaltet diese Grenze aus."),
+    "AuctionHouseBot.DisableItemsAboveGUID": ("Items über Entry-ID blockieren", "Verhindert Auktionen normaler Items mit Entry-ID über diesem Wert. 0 schaltet diese Grenze aus."),
+    "AuctionHouseBot.DisableTGsBelowGUID": ("Handwerkswaren unter Entry-ID blockieren", "Verhindert Auktionen von Trade-Goods mit Entry-ID unter diesem Wert. 0 schaltet diese Grenze aus."),
+    "AuctionHouseBot.DisableTGsAboveGUID": ("Handwerkswaren über Entry-ID blockieren", "Verhindert Auktionen von Trade-Goods mit Entry-ID über diesem Wert. 0 schaltet diese Grenze aus."),
+    "AuctionHouseBot.DisableItemsBelowReqLevel": ("Items unter benötigtem Level blockieren", "Verhindert Auktionen normaler Items unter dieser benötigten Charakterstufe. 0 schaltet diese Grenze aus."),
+    "AuctionHouseBot.DisableItemsAboveReqLevel": ("Items über benötigtem Level blockieren", "Verhindert Auktionen normaler Items über dieser benötigten Charakterstufe. 0 schaltet diese Grenze aus."),
+    "AuctionHouseBot.DisableTGsBelowReqLevel": ("Handwerkswaren unter benötigtem Level blockieren", "Verhindert Auktionen von Trade-Goods unter dieser benötigten Charakterstufe. 0 schaltet diese Grenze aus."),
+    "AuctionHouseBot.DisableTGsAboveReqLevel": ("Handwerkswaren über benötigtem Level blockieren", "Verhindert Auktionen von Trade-Goods über dieser benötigten Charakterstufe. 0 schaltet diese Grenze aus."),
+    "AuctionHouseBot.DisableItemsBelowReqSkillRank": ("Items unter Skillrang blockieren", "Verhindert Auktionen normaler Items unter diesem benötigten Skillrang. 0 schaltet diese Grenze aus."),
+    "AuctionHouseBot.DisableItemsAboveReqSkillRank": ("Items über Skillrang blockieren", "Verhindert Auktionen normaler Items über diesem benötigten Skillrang. 0 schaltet diese Grenze aus."),
+    "AuctionHouseBot.DisableTGsBelowReqSkillRank": ("Handwerkswaren unter Skillrang blockieren", "Verhindert Auktionen von Trade-Goods unter diesem benötigten Skillrang. 0 schaltet diese Grenze aus."),
+    "AuctionHouseBot.DisableTGsAboveReqSkillRank": ("Handwerkswaren über Skillrang blockieren", "Verhindert Auktionen von Trade-Goods über diesem benötigten Skillrang. 0 schaltet diese Grenze aus."),
+    "AuctionHouseBot.SellerWhiteList": ("Verkäufer-Whitelist", "Kommagetrennte Item-Entry-IDs, die der Verkäufer trotz sonstiger Filter anbieten darf. Leer bedeutet keine Whitelist."),
     "AuctionHouseBot.DEBUG": ("Debug aktivieren", "Schreibt allgemeine Debug-Ausgaben des AHBot."),
     "AuctionHouseBot.DEBUG_CONFIG": ("Config-Debug", "Schreibt Debug-Ausgaben beim Einlesen der Konfiguration."),
     "AuctionHouseBot.DEBUG_FILTERS": ("Filter-Debug", "Schreibt Debug-Ausgaben zu Itemfiltern."),
@@ -70,6 +98,42 @@ META = {
     "AuctionHouseBot.DEBUG_SELLER": ("Verkäufer-Debug", "Schreibt Debug-Ausgaben des Verkäufer-Moduls."),
     "AuctionHouseBot.TRACE_SELLER": ("Verkäufe protokollieren", "Protokolliert durch den Bot verkaufte Items detaillierter."),
     "AuctionHouseBot.TRACE_BUYER": ("Käufe protokollieren", "Protokolliert durch den Bot gekaufte Items detaillierter."),
+}
+
+
+BOOLEAN_KEYS = {
+    "AuctionHouseBot.DEBUG", "AuctionHouseBot.DEBUG_CONFIG", "AuctionHouseBot.DEBUG_FILTERS",
+    "AuctionHouseBot.DEBUG_BUYER", "AuctionHouseBot.DEBUG_SELLER", "AuctionHouseBot.TRACE_SELLER",
+    "AuctionHouseBot.TRACE_BUYER", "AuctionHouseBot.EnableSeller", "AuctionHouseBot.EnableBuyer",
+    "AuctionHouseBot.UseBuyPriceForSeller", "AuctionHouseBot.UseBuyPriceForBuyer",
+    "AuctionHouseBot.UseMarketPriceForSeller", "AuctionHouseBot.ConsiderOnlyBotAuctions",
+    "AuctionHouseBot.DivisibleStacks", "AuctionHouseBot.VendorItems", "AuctionHouseBot.VendorTradeGoods",
+    "AuctionHouseBot.LootItems", "AuctionHouseBot.LootTradeGoods", "AuctionHouseBot.OtherItems",
+    "AuctionHouseBot.OtherTradeGoods", "AuctionHouseBot.ProfessionItems", "AuctionHouseBot.No_Bind",
+    "AuctionHouseBot.Bind_When_Picked_Up", "AuctionHouseBot.Bind_When_Equipped",
+    "AuctionHouseBot.Bind_When_Use", "AuctionHouseBot.Bind_Quest_Item",
+    "AuctionHouseBot.DisablePermEnchant", "AuctionHouseBot.DisableConjured",
+    "AuctionHouseBot.DisableGems", "AuctionHouseBot.DisableMoney", "AuctionHouseBot.DisableMoneyLoot",
+    "AuctionHouseBot.DisableLootable", "AuctionHouseBot.DisableKeys", "AuctionHouseBot.DisableDuration",
+    "AuctionHouseBot.DisableBOP_Or_Quest_NoReqLevel", "AuctionHouseBot.DisableWarriorItems",
+    "AuctionHouseBot.DisablePaladinItems", "AuctionHouseBot.DisableHunterItems",
+    "AuctionHouseBot.DisableRogueItems", "AuctionHouseBot.DisablePriestItems",
+    "AuctionHouseBot.DisableDKItems", "AuctionHouseBot.DisableShamanItems",
+    "AuctionHouseBot.DisableMageItems", "AuctionHouseBot.DisableWarlockItems",
+    "AuctionHouseBot.DisableUnusedClassItems", "AuctionHouseBot.DisableDruidItems",
+}
+
+NUMBER_KEYS = {
+    "AuctionHouseBot.MarketResetThreshold", "AuctionHouseBot.Account", "AuctionHouseBot.GUID",
+    "AuctionHouseBot.ItemsPerCycle", "AuctionHouseBot.DuplicatesCount",
+    "AuctionHouseBot.DisableItemsBelowLevel", "AuctionHouseBot.DisableItemsAboveLevel",
+    "AuctionHouseBot.DisableTGsBelowLevel", "AuctionHouseBot.DisableTGsAboveLevel",
+    "AuctionHouseBot.DisableItemsBelowGUID", "AuctionHouseBot.DisableItemsAboveGUID",
+    "AuctionHouseBot.DisableTGsBelowGUID", "AuctionHouseBot.DisableTGsAboveGUID",
+    "AuctionHouseBot.DisableItemsBelowReqLevel", "AuctionHouseBot.DisableItemsAboveReqLevel",
+    "AuctionHouseBot.DisableTGsBelowReqLevel", "AuctionHouseBot.DisableTGsAboveReqLevel",
+    "AuctionHouseBot.DisableItemsBelowReqSkillRank", "AuctionHouseBot.DisableItemsAboveReqSkillRank",
+    "AuctionHouseBot.DisableTGsBelowReqSkillRank", "AuctionHouseBot.DisableTGsAboveReqSkillRank",
 }
 
 
@@ -93,7 +157,7 @@ def load_ahbot(cfg: dict, realm: str) -> tuple[str, list[AhbotField]]:
             label=label,
             description=desc,
             group=group_for(item.key),
-            type=item.type,
+            type=field_type(item.key, item.type),
             line=item.line,
         ))
     return path, fields
@@ -147,6 +211,29 @@ def save_ahbot(cfg: dict, realm: str, values: dict[str, str]) -> tuple[str, list
     return path, changes
 
 
+def schedule_realm_restart(cfg: dict, realm: str, delay: int) -> str:
+    base = cfg["server"]["playerbot_path"] if realm == "playerbot" else cfg["server"]["normal_path"]
+    workdir = f"{base}/bin"
+    script = f"/tmp/wowpanel_restart_{realm}.sh"
+    content = f"""#!/usr/bin/env bash
+sleep {int(delay)}
+for pid in $(pgrep -x worldserver || true); do
+  if [ "$(readlink -f /proc/$pid/cwd 2>/dev/null)" = {shell_quote(workdir)} ]; then
+    kill -TERM "$pid" || true
+  fi
+done
+sleep 5
+cd {shell_quote(workdir)}
+nohup ./worldserver >/tmp/worldserver_{realm}.wowpanel.log 2>&1 &
+"""
+    marker = "WOWPANEL_RESTART"
+    command = f"cat > {shell_quote(script)} <<'{marker}'\n{content}{marker}\nchmod +x {shell_quote(script)}\nnohup bash {shell_quote(script)} >/tmp/wowpanel_restart_{realm}.log 2>&1 &"
+    code, out, err = SSHClient(cfg["server"]).run(command, timeout=10)
+    if code != 0:
+        raise RuntimeError(err or out or "Neustart konnte nicht geplant werden.")
+    return f"SSH-Neustart für {realm} in {delay} Sekunden geplant."
+
+
 def reset_ahbot(cfg: dict, realm: str) -> tuple[str, list[tuple[str, str, str]], str]:
     path, fields = load_ahbot(cfg, realm)
     ssh = SSHClient(cfg["server"])
@@ -182,7 +269,7 @@ def group_for(key: str) -> str:
         return "buyer"
     if key.startswith("AuctionHouseBot.Seller") or "Seller" in key:
         return "seller"
-    if any(part in key for part in ["Quality", "ItemLevel", "ItemLvl", "Amount", "Min", "Max"]):
+    if any(part in key for part in ["Quality", "ItemLevel", "ItemLvl", "Amount", "Min", "Max", "Below", "Above", "ReqLevel", "ReqSkill"]):
         return "quality"
     if any(part in key for part in ["Vendor", "Loot", "Other", "Profession", "Bind", "Disable", "No_Bind"]):
         return "filter"
@@ -196,17 +283,33 @@ def describe(key: str, original: str) -> tuple[str, str]:
     return label, translate_description(original) or "AHBot-Einstellung aus der Konfigurationsdatei. Prüfe Wert und Wirkung sorgfältig vor dem Neustart."
 
 
+def field_type(key: str, detected: str) -> str:
+    if key == "AuctionHouseBot.ElapsingTimeClass":
+        return "enum_duration"
+    if key in BOOLEAN_KEYS:
+        return "boolean"
+    if key in NUMBER_KEYS:
+        return "number"
+    if key == "AuctionHouseBot.SellerWhiteList":
+        return "text"
+    return detected
+
+
 def translate_description(text: str) -> str:
     value = " ".join(line.strip() for line in (text or "").splitlines() if line.strip())
     replacements = [
         ("Enable/Disable", "Aktiviert/deaktiviert"),
         ("Debugging output", "Debug-Ausgaben"),
-        ("Include", "Schließt ein:"),
+        ("Include", "Erlaubt"),
         ("Disable", "Blockiert"),
         ("Default", "Standard"),
         ("Number of", "Anzahl"),
         ("auction", "Auktion"),
         ("auctions", "Auktionen"),
+        ("fished for", "gesammelt werden"),
+        ("looted", "erbeutet"),
+        ("loot", "Beute"),
+        ("Items", "Items"),
         ("items", "Items"),
         ("seller", "Verkäufer"),
         ("buyer", "Käufer"),

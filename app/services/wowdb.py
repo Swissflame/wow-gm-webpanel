@@ -110,7 +110,7 @@ def search_characters(cfg: dict, query: str = "", limit: int = 100, realm: str =
 def auction_stats(cfg: dict, realm: str = "normal") -> dict:
     mysql = cfg["mysql"]
     char_db = mysql["pb_characters_db"] if realm == "playerbot" else mysql["characters_db"]
-    sql = "SELECT COUNT(*) total, MIN(buyoutprice) min_buyout, MAX(buyoutprice) max_buyout, SUM(item_count) items FROM auctionhouse"
+    sql = "SELECT COUNT(*) total, MIN(buyoutprice) min_buyout, MAX(buyoutprice) max_buyout, COUNT(itemguid) items FROM auctionhouse"
     return rows(mysql, char_db, sql)[0]
 
 

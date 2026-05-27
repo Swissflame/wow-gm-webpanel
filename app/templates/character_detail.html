@@ -1,0 +1,73 @@
+{% extends "base.html" %}{% block content %}
+{% if flash %}<section class="notice"><strong>Charakter</strong><p>{{ flash }}</p></section>{% endif %}
+{% if error %}<section class="notice"><strong>{{ _("Connection problem") }}</strong><p>{{ error }}</p></section>{% endif %}
+
+{% if character %}
+<section class="account-detail character-detail">
+  <section class="panel">
+    <h2>{{ character.name }} <small>GUID {{ character.guid }} · {{ character.realm }}</small></h2>
+    <div class="detail-grid">
+      <div><span>Account</span><strong>{{ character.account_name or character.account }}{% if character.account_name %} · ID {{ character.account }}{% endif %}</strong></div>
+      <div><span>Level</span><strong>{{ character.level }}</strong></div>
+      <div><span>Gold</span><strong>{{ (character.money or 0) // 10000 }}</strong></div>
+      <div><span>Online</span><strong>{{ "ja" if character.online else "nein" }}</strong></div>
+      <div><span>Map / Zone</span><strong>{{ character.map }} / {{ character.zone }}</strong></div>
+      <div><span>Position</span><strong>{{ character.x }}, {{ character.y }}, {{ character.z }}</strong></div>
+      <div><span>Spielzeit</span><strong>{{ ((character.totaltime or 0) // 3600) }} h</strong></div>
+      <div><span>Logout</span><strong>{{ character.logout_time or "-" }}</strong></div>
+    </div>
+  </section>
+
+  <section class="cards character-stats">
+    <div class="card"><span>Inventarplätze</span><strong>{{ character.inventory_count }}</strong></div>
+    <div class="card"><span>Quests</span><strong>{{ character.quest_count }}</strong></div>
+    <div class="card"><span>Spells</span><strong>{{ character.spell_count }}</strong></div>
+    <div class="card"><span>Achievements</span><strong>{{ character.achievement_count }}</strong></div>
+    <div class="card"><span>Post</span><strong>{{ character.mail_count }}</strong></div>
+  </section>
+
+  {% if user.gm_level >= 3 %}
+  <form method="post" action="/characters/{{ character.realm_key }}/{{ character.guid }}/save" class="panel account-edit character-edit">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <h2>Charakter bearbeiten</h2>
+    <label>Name<input name="name" value="{{ character.name }}" maxlength="12" required></label>
+    <label>Account-ID<input name="account" type="number" value="{{ character.account }}" required></label>
+    <label>Level<input name="level" type="number" min="1" max="255" value="{{ character.level }}" required></label>
+    <label>Gold<input name="money_gold" type="number" min="0" value="{{ (character.money or 0) // 10000 }}"></label>
+    <label>Map<input name="map_id" type="number" value="{{ character.map }}" required></label>
+    <label>Zone<input name="zone" type="number" value="{{ character.zone }}" required></label>
+    <label>X<input name="x" type="number" step="0.01" value="{{ character.x }}" required></label>
+    <label>Y<input name="y" type="number" step="0.01" value="{{ character.y }}" required></label>
+    <label>Z<input name="z" type="number" step="0.01" value="{{ character.z }}" required></label>
+    <button class="primary">Speichern</button>
+  </form>
+
+  <form method="post" action="/characters/{{ character.realm_key }}/{{ character.guid }}/delete" class="panel account-delete danger">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <h2>Charakter löschen</h2>
+    <p>Dies löscht den Charakter und seine zugehörigen Charakterdaten auf diesem Realm.</p>
+    <label>Zur Bestätigung Charakternamen eingeben
+      <input name="confirm" placeholder="{{ character.name }}" autocomplete="off" required>
+    </label>
+    <button class="danger-button">Charakter endgültig löschen</button>
+  </form>
+  {% endif %}
+
+  <section class="panel">
+    <h2>Skills</h2>
+    <table class="inner-table"><tr><th>Skill-ID</th><th>Wert</th><th>Maximum</th></tr>
+      {% for skill in character.skills %}<tr><td>{{ skill.skill }}</td><td>{{ skill.value }}</td><td>{{ skill.max }}</td></tr>{% endfor %}
+    </table>
+    {% if not character.skills %}<p>Keine Skills gefunden.</p>{% endif %}
+  </section>
+
+  <section class="panel">
+    <h2>Ruf</h2>
+    <table class="inner-table"><tr><th>Fraktion</th><th>Stand</th><th>Flags</th></tr>
+      {% for rep in character.reputations %}<tr><td>{{ rep.faction }}</td><td>{{ rep.standing }}</td><td>{{ rep.flags }}</td></tr>{% endfor %}
+    </table>
+    {% if not character.reputations %}<p>Keine Rufdaten gefunden.</p>{% endif %}
+  </section>
+</section>
+{% endif %}
+{% endblock %}

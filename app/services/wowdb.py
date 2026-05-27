@@ -140,7 +140,76 @@ def account_characters(mysql: dict, char_db: str, account_id: int, realm: str) -
     data = rows(mysql, char_db, sql, {"id": account_id})
     for row in data:
         row["realm"] = realm
+        row["realm_key"] = "playerbot" if realm == "Playerbot" else "normal"
     return data
+
+
+def character_database(mysql: dict, realm: str) -> str:
+    return mysql["pb_characters_db"] if realm == "playerbot" else mysql["characters_db"]
+
+
+def character_detail(cfg: dict, realm: str, guid: int) -> dict | None:
+    mysql = cfg["mysql"]
+    char_db = character_database(mysql, realm)
+    sql = """
+    SELECT c.guid, c.account, a.username AS account_name, c.name, c.level, c.race, c.class, c.gender,
+           c.money, c.online, c.zone, c.map,
+           ROUND(c.position_x,2) AS x, ROUND(c.position_y,2) AS y, ROUND(c.position_z,2) AS z,
+           c.totaltime, c.leveltime, c.logout_time, c.at_login, c.xp
+    FROM characters c
+    LEFT JOIN {auth_db}.account a ON a.id = c.account
+    WHERE c.guid = :guid
+    LIMIT 1
+    """.format(auth_db=mysql["auth_db"])
+    data = rows(mysql, char_db, sql, {"guid": int(guid)})
+    if not data:
+        return None
+    char = data[0]
+    char["realm_key"] = realm
+    char["realm"] = "Playerbot" if realm == "playerbot" else "Normal"
+    char["inventory_count"] = scalar(mysql, char_db, "SELECT COUNT(*) FROM character_inventory WHERE guid=:guid", {"guid": int(guid)}) or 0
+    char["quest_count"] = scalar(mysql, char_db, "SELECT COUNT(*) FROM character_queststatus WHERE guid=:guid", {"guid": int(guid)}) or 0
+    char["spell_count"] = scalar(mysql, char_db, "SELECT COUNT(*) FROM character_spell WHERE guid=:guid", {"guid": int(guid)}) or 0
+    char["achievement_count"] = scalar(mysql, char_db, "SELECT COUNT(*) FROM character_achievement WHERE guid=:guid", {"guid": int(guid)}) or 0
+    char["mail_count"] = scalar(mysql, char_db, "SELECT COUNT(*) FROM mail WHERE receiver=:guid", {"guid": int(guid)}) or 0
+    char["reputations"] = rows(mysql, char_db, "SELECT faction, standing, flags FROM character_reputation WHERE guid=:guid ORDER BY faction LIMIT 50", {"guid": int(guid)})
+    char["skills"] = rows(mysql, char_db, "SELECT skill, value, max FROM character_skills WHERE guid=:guid ORDER BY skill LIMIT 80", {"guid": int(guid)})
+    return char
+
+
+def update_character(cfg: dict, realm: str, guid: int, account: int, name: str, level: int, money_gold: int, map_id: int, zone: int, x: float, y: float, z: float):
+    mysql = cfg["mysql"]
+    char_db = character_database(mysql, realm)
+    name = name.strip()
+    if not name or len(name) > 12:
+        raise ValueError("Charaktername muss 1 bis 12 Zeichen haben.")
+    level = max(1, min(int(level), 255))
+    money = max(0, int(money_gold)) * 10000
+    with engine_for(mysql, char_db).begin() as conn:
+        exists = conn.execute(text("SELECT guid FROM characters WHERE guid=:guid"), {"guid": int(guid)}).first()
+        if not exists:
+            raise ValueError("Charakter nicht gefunden.")
+        conn.execute(text("""
+            UPDATE characters
+            SET account=:account, name=:name, level=:level, money=:money, map=:map, zone=:zone,
+                position_x=:x, position_y=:y, position_z=:z
+            WHERE guid=:guid
+        """), {
+            "guid": int(guid), "account": int(account), "name": name, "level": level, "money": money,
+            "map": int(map_id), "zone": int(zone), "x": float(x), "y": float(y), "z": float(z),
+        })
+
+
+def delete_character(cfg: dict, realm: str, guid: int) -> str:
+    mysql = cfg["mysql"]
+    char_db = character_database(mysql, realm)
+    with engine_for(mysql, char_db).begin() as conn:
+        char = conn.execute(text("SELECT guid, name FROM characters WHERE guid=:guid"), {"guid": int(guid)}).mappings().first()
+        if not char:
+            raise ValueError("Charakter nicht gefunden.")
+        delete_character_rows(conn, int(guid))
+        conn.execute(text("DELETE FROM characters WHERE guid=:guid"), {"guid": int(guid)})
+    return char["name"]
 
 
 def account_table_columns(mysql_cfg: dict, auth_db: str, table: str = "account") -> set[str]:
@@ -250,17 +319,35 @@ def delete_account_characters(mysql: dict, char_db: str, account_id: int):
     with engine_for(mysql, char_db).begin() as conn:
         guids = [row["guid"] for row in conn.execute(text("SELECT guid FROM characters WHERE account=:id"), {"id": int(account_id)}).mappings()]
         for guid in guids:
-            for table, column in cleanup.items():
-                try:
-                    conn.execute(text(f"DELETE FROM {table} WHERE {column}=:guid"), {"guid": guid})
-                except Exception:
-                    pass
-            try:
-                conn.execute(text("DELETE mi FROM mail_items mi JOIN mail m ON m.id = mi.mail_id WHERE m.receiver=:guid"), {"guid": guid})
-                conn.execute(text("DELETE FROM mail WHERE receiver=:guid"), {"guid": guid})
-            except Exception:
-                pass
+            delete_character_rows(conn, int(guid), cleanup)
         conn.execute(text("DELETE FROM characters WHERE account=:id"), {"id": int(account_id)})
+
+
+def delete_character_rows(conn, guid: int, cleanup: dict | None = None):
+    cleanup = cleanup or {
+        "character_account_data": "guid", "character_achievement": "guid", "character_achievement_progress": "guid",
+        "character_action": "guid", "character_aura": "guid", "character_banned": "guid",
+        "character_battleground_data": "guid", "character_declinedname": "guid",
+        "character_equipmentsets": "guid", "character_gifts": "guid", "character_glyphs": "guid",
+        "character_homebind": "guid", "character_instance": "guid", "character_inventory": "guid",
+        "character_pet": "owner", "character_queststatus": "guid", "character_queststatus_daily": "guid",
+        "character_queststatus_monthly": "guid", "character_queststatus_rewarded": "guid",
+        "character_queststatus_seasonal": "guid", "character_queststatus_weekly": "guid",
+        "character_reputation": "guid", "character_skills": "guid", "character_social": "guid",
+        "character_spell": "guid", "character_spell_cooldown": "guid", "character_stats": "guid",
+        "character_talent": "guid", "character_void_storage": "guid", "corpse": "guid",
+        "group_member": "memberGuid", "guild_member": "guid", "petition_sign": "playerguid",
+    }
+    for table, column in cleanup.items():
+        try:
+            conn.execute(text(f"DELETE FROM {table} WHERE {column}=:guid"), {"guid": guid})
+        except Exception:
+            pass
+    try:
+        conn.execute(text("DELETE mi FROM mail_items mi JOIN mail m ON m.id = mi.mail_id WHERE m.receiver=:guid"), {"guid": guid})
+        conn.execute(text("DELETE FROM mail WHERE receiver=:guid"), {"guid": guid})
+    except Exception:
+        pass
 
 
 def _set_account_access(conn, account_id: int, gm_level_value: int):
@@ -282,6 +369,7 @@ def search_characters(cfg: dict, query: str = "", limit: int = 100, realm: str =
     data = rows(mysql, char_db, sql, {"q": query, "likeq": f"%{query}%", "limit": limit})
     for row in data:
         row["realm"] = "Playerbot" if realm == "playerbot" else "Normal"
+        row["realm_key"] = realm
     return data[:limit]
 
 

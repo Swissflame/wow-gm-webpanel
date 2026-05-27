@@ -3,7 +3,7 @@
   const danger = form.closest(".danger");
   if (!danger) return;
   const message = form.matches("[action*='/delete']")
-    ? "Diesen Account wirklich endgueltig loeschen? Diese Aktion entfernt auch seine Charaktere."
+    ? "Diesen Eintrag wirklich endgueltig loeschen? Diese Aktion entfernt auch zugehoerige Daten."
     : "Diese Aktion setzt die Webpanel-Konfiguration zurueck. Fortfahren?";
   if (!confirm(message)) event.preventDefault();
 });

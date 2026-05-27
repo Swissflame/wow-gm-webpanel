@@ -3,7 +3,7 @@
   <tr><th>Name</th><th>Level</th><th>Online</th><th>Gold</th><th>Zone</th><th>Map</th><th>Position</th></tr>
   {% for c in chars %}
   <tr>
-    <td>{{ c.name }}</td>
+    <td><a href="/characters/{{ c.realm_key }}/{{ c.guid }}" target="_blank" rel="noopener">{{ c.name }}</a></td>
     <td>{{ c.level }}</td>
     <td>{{ "ja" if c.online else "nein" }}</td>
     <td>{{ (c.money or 0) // 10000 }}</td>

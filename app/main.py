@@ -53,6 +53,9 @@ def create_app() -> FastAPI:
     app.add_api_route("/accounts/{account_id}/save", account_save, methods=["POST"])
     app.add_api_route("/accounts/{account_id}/delete", account_delete, methods=["POST"])
     app.add_api_route("/characters", characters, methods=["GET"], response_class=HTMLResponse)
+    app.add_api_route("/characters/{realm}/{guid}", character_detail, methods=["GET"], response_class=HTMLResponse)
+    app.add_api_route("/characters/{realm}/{guid}/save", character_save, methods=["POST"])
+    app.add_api_route("/characters/{realm}/{guid}/delete", character_delete, methods=["POST"])
     app.add_api_route("/gm", gm_console, methods=["GET"], response_class=HTMLResponse)
     app.add_api_route("/gm/favorites", gm_favorites, methods=["POST"])
     app.add_api_route("/gm/run", gm_run, methods=["POST"])
@@ -280,6 +283,54 @@ def characters(request: Request, q: str = "", db: Session = Depends(get_db), use
     except Exception as exc:
         items, error = [], str(exc)
     return render(request, "characters.html", {"title": "Charaktere", "items": items, "q": q, "error": error}, db)
+
+
+def character_detail(request: Request, realm: str, guid: int, db: Session = Depends(get_db), user: PanelUser = Depends(require_level(1))):
+    if realm not in REALMS:
+        raise HTTPException(404, "Realm nicht gefunden")
+    try:
+        character, error = wowdb.character_detail(all_config(db), realm, guid), None
+    except Exception as exc:
+        character, error = None, str(exc)
+    if not character and not error:
+        raise HTTPException(404, "Charakter nicht gefunden")
+    flash = request.session.pop("character_flash", None)
+    return render(request, "character_detail.html", {"title": "Charakter", "character": character, "error": error, "flash": flash}, db)
+
+
+def character_save(request: Request, realm: str, guid: int, db: Session = Depends(get_db), user: PanelUser = Depends(require_level(3)),
+                   csrf: str = Form(...), account: int = Form(...), name: str = Form(...), level: int = Form(...),
+                   money_gold: int = Form(0), map_id: int = Form(...), zone: int = Form(...),
+                   x: float = Form(...), y: float = Form(...), z: float = Form(...)):
+    if realm not in REALMS:
+        raise HTTPException(404, "Realm nicht gefunden")
+    if not verify_csrf(request, csrf):
+        raise HTTPException(400, "CSRF")
+    try:
+        wowdb.update_character(all_config(db), realm, guid, account, name, level, money_gold, map_id, zone, x, y, z)
+        log_action(db, user.id, "character_update", f"{realm}:{guid}", name, request.client.host if request.client else None)
+        request.session["character_flash"] = "Charakter gespeichert."
+    except Exception as exc:
+        request.session["character_flash"] = f"Fehler: {exc}"
+    return RedirectResponse(f"/characters/{realm}/{guid}", status_code=303)
+
+
+def character_delete(request: Request, realm: str, guid: int, db: Session = Depends(get_db), user: PanelUser = Depends(require_level(3)),
+                     csrf: str = Form(...), confirm: str = Form("")):
+    if realm not in REALMS:
+        raise HTTPException(404, "Realm nicht gefunden")
+    if not verify_csrf(request, csrf):
+        raise HTTPException(400, "CSRF")
+    character = wowdb.character_detail(all_config(db), realm, guid)
+    if not character:
+        raise HTTPException(404, "Charakter nicht gefunden")
+    if confirm.strip().lower() != character["name"].lower():
+        request.session["character_flash"] = "Löschen abgebrochen: Charaktername wurde nicht korrekt bestätigt."
+        return RedirectResponse(f"/characters/{realm}/{guid}", status_code=303)
+    name = wowdb.delete_character(all_config(db), realm, guid)
+    log_action(db, user.id, "character_delete", f"{realm}:{guid}", name, request.client.host if request.client else None)
+    request.session["character_flash"] = f"Charakter {name} wurde gelöscht."
+    return RedirectResponse("/characters", status_code=303)
 
 
 def gm_console(request: Request, db: Session = Depends(get_db), user: PanelUser = Depends(require_level(1))):

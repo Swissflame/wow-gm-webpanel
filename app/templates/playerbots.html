@@ -1,3 +1,13 @@
 {% extends "base.html" %}{% block content %}
-<section class="panel"><h2>Playerbot-Verwaltung</h2><p>Playerbot-Konfigurationen werden im Config-Editor gescannt. Typische Kommandos: bot add, bot remove, bot command, rndbot reset. Crash-Hinweise und Restarts werden im Audit-Log protokolliert.</p></section>
+{% if unavailable %}
+<section class="notice"><strong>{{ _("Feature unavailable") }}</strong><p>Playerbots sind nur im Playerbot-Realm aktiv.</p></section>
+{% else %}
+{% if error %}<section class="notice"><strong>{{ _("Connection problem") }}</strong><p>{{ error }}</p></section>{% endif %}
+<section class="cards">
+  <div class="card"><span>Bot-/Realm-Charaktere</span><strong>{{ stats.get('characters','?') }}</strong></div>
+  <div class="card"><span>Online</span><strong>{{ stats.get('online','?') }}</strong></div>
+  <div class="card"><span>Bot-Accounts</span><strong>{{ stats.get('accounts','?') }}</strong></div>
+</section>
+<section class="panel"><h2>Kommandos & Hinweise</h2><div class="chips"><span>bot add</span><span>bot remove</span><span>bot command</span><span>rndbot reset</span><span>rndbot stats</span></div><p>Playerbot-Konfigurationen findest du unter Configs im Thema Playerbots. Restarts und Crash-Hinweise werden im Audit-Log sichtbar.</p></section>
+{% endif %}
 {% endblock %}

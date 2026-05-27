@@ -1,20 +1,30 @@
 {% extends "base.html" %}
 {% block content %}
-<section class="panel narrow">
+<section class="setup-shell">
+<section class="panel">
   <h2>Erstinstallation</h2>
   {% if error %}<p class="error">{{ error }}</p>{% endif %}
   <form method="post" class="grid-form">
     <input type="hidden" name="csrf" value="{{ csrf }}">
-    <label>Sprache<select name="language"><option value="de">Deutsch</option><option value="en">English</option></select></label>
-    <label>WoW-Server-IP<input name="wow_host" value="192.168.1.118" required></label>
-    <label>SSH-Benutzer<input name="ssh_user" value="klaus" required></label>
-    <label>SSH-Passwort<input type="password" name="ssh_password" autocomplete="new-password"></label>
-    <label>MySQL-Host<input name="mysql_host" value="192.168.1.118" required></label>
-    <label>MySQL-Benutzer<input name="mysql_user" value="acore" required></label>
-    <label>MySQL-Passwort<input type="password" name="mysql_password" autocomplete="new-password"></label>
-    <label>Admin-Benutzer<input name="admin_username" required></label>
-    <label>Admin-Passwort<input type="password" name="admin_password" required autocomplete="new-password"></label>
-    <button class="primary">Konfiguration speichern</button>
+    <fieldset><legend>Sprache</legend>
+      <label>Sprache<select name="language"><option value="de">Deutsch</option><option value="en">English</option></select></label>
+    </fieldset>
+    <fieldset><legend>WoW-Server</legend>
+      <label>Server-IP<input name="wow_host" value="192.168.1.118" required></label>
+      <label>SSH-Benutzer<input name="ssh_user" value="klaus" required></label>
+      <label>SSH-Passwort<input type="password" name="ssh_password" autocomplete="new-password"></label>
+    </fieldset>
+    <fieldset><legend>MySQL des WoW-Servers</legend>
+      <label>MySQL-Host<input name="mysql_host" value="192.168.1.118" required></label>
+      <label>MySQL-Benutzer<input name="mysql_user" value="acore" required></label>
+      <label>MySQL-Passwort<input type="password" name="mysql_password" autocomplete="new-password"></label>
+    </fieldset>
+    <fieldset><legend>Webpanel-Admin</legend>
+      <label>Admin-Benutzer<input name="admin_username" required></label>
+      <label>Admin-Passwort<input type="password" name="admin_password" required minlength="8" autocomplete="new-password"></label>
+    </fieldset>
+    <div class="form-actions"><button class="primary">Konfiguration speichern</button></div>
   </form>
+</section>
 </section>
 {% endblock %}

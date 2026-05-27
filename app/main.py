@@ -14,9 +14,11 @@ from .security import csrf_token, verify_csrf, hash_password, verify_password, v
 from .services.config_store import bootstrap_defaults, all_config, set_config
 from .services.audit import log_action
 from .services import wowdb
+from .services.realm import REALMS, selected_realm, realm_cfg
 from .services.ssh_service import SSHClient, test_port
 from .services.config_scanner import scan_remote, update_value
-from .services.gm import allowed_commands, record_command
+from .services.gm import allowed_commands, normalize_db_commands, record_command
+from .i18n import translate
 
 BASE = Path(__file__).resolve().parent
 templates = Jinja2Templates(directory=str(BASE / "templates"))
@@ -40,6 +42,7 @@ def create_app() -> FastAPI:
     app.add_api_route("/login", login_get, methods=["GET"], response_class=HTMLResponse)
     app.add_api_route("/login", login_post, methods=["POST"])
     app.add_api_route("/logout", logout, methods=["POST"])
+    app.add_api_route("/context", context_post, methods=["POST"])
     app.add_api_route("/dashboard", dashboard, methods=["GET"], response_class=HTMLResponse)
     app.add_api_route("/online", online, methods=["GET"], response_class=HTMLResponse)
     app.add_api_route("/accounts", accounts, methods=["GET"], response_class=HTMLResponse)
@@ -59,10 +62,16 @@ def create_app() -> FastAPI:
     return app
 
 def render(request: Request, name: str, context: dict, db: Session | None = None):
+    lang = request.session.get("lang") or (all_config(db).get("language") if db else "de") or "de"
     context.setdefault("request", request)
     context.setdefault("csrf", csrf_token(request))
     context.setdefault("user", getattr(request.state, "user", None))
     context.setdefault("cfg", all_config(db) if db else {})
+    context.setdefault("lang", lang)
+    context.setdefault("_", lambda text: translate(lang, text))
+    context.setdefault("realms", REALMS)
+    context.setdefault("selected_realm", selected_realm(request))
+    context.setdefault("selected_realm_info", realm_cfg(context["cfg"], selected_realm(request)) if context.get("cfg") else {})
     return templates.TemplateResponse(name, context)
 
 
@@ -157,15 +166,27 @@ def logout(request: Request, user: PanelUser = Depends(current_user)):
     return RedirectResponse("/login", status_code=303)
 
 
+def context_post(request: Request, db: Session = Depends(get_db), user: PanelUser = Depends(current_user), csrf: str = Form(...), realm: str = Form("normal"), lang: str = Form("de")):
+    if not verify_csrf(request, csrf):
+        raise HTTPException(400, "CSRF")
+    if realm in REALMS:
+        request.session["realm"] = realm
+    if lang in {"de", "en"}:
+        request.session["lang"] = lang
+        set_config(db, "language", lang)
+    return RedirectResponse(request.headers.get("referer") or "/dashboard", status_code=303)
+
+
 def dashboard(request: Request, db: Session = Depends(get_db), user: PanelUser = Depends(current_user)):
     cfg = all_config(db)
+    realm = selected_realm(request)
     status = {
         "auth": test_port(cfg["server"]["wow_host"], cfg["realms"]["auth_port"]),
         "normal": test_port(cfg["server"]["wow_host"], cfg["realms"]["normal_world_port"]),
         "playerbot": test_port(cfg["server"]["wow_host"], cfg["realms"]["playerbot_world_port"]),
     }
     try:
-        stats = wowdb.dashboard_stats(cfg)
+        stats = wowdb.dashboard_stats(cfg, realm)
     except Exception as exc:
         stats = {"error": str(exc)}
     return render(request, "dashboard.html", {"title": "Dashboard", "status": status, "stats": stats}, db)
@@ -173,7 +194,7 @@ def dashboard(request: Request, db: Session = Depends(get_db), user: PanelUser =
 
 def online(request: Request, db: Session = Depends(get_db), user: PanelUser = Depends(require_level(0))):
     try:
-        players = wowdb.online_players(all_config(db))
+        players = wowdb.online_players(all_config(db), selected_realm(request))
     except Exception as exc:
         players, error = [], str(exc)
     else:
@@ -182,15 +203,32 @@ def online(request: Request, db: Session = Depends(get_db), user: PanelUser = De
 
 
 def accounts(request: Request, q: str = "", db: Session = Depends(get_db), user: PanelUser = Depends(require_level(1))):
-    return render(request, "accounts.html", {"title": "Accounts", "items": wowdb.search_accounts(all_config(db), q), "q": q}, db)
+    try:
+        items, error = wowdb.search_accounts(all_config(db), q), None
+    except Exception as exc:
+        items, error = [], str(exc)
+    return render(request, "accounts.html", {"title": "Accounts", "items": items, "q": q, "error": error}, db)
 
 
 def characters(request: Request, q: str = "", db: Session = Depends(get_db), user: PanelUser = Depends(require_level(1))):
-    return render(request, "characters.html", {"title": "Charaktere", "items": wowdb.search_characters(all_config(db), q), "q": q}, db)
+    try:
+        items, error = wowdb.search_characters(all_config(db), q, realm=selected_realm(request)), None
+    except Exception as exc:
+        items, error = [], str(exc)
+    return render(request, "characters.html", {"title": "Charaktere", "items": items, "q": q, "error": error}, db)
 
 
 def gm_console(request: Request, db: Session = Depends(get_db), user: PanelUser = Depends(require_level(1))):
-    return render(request, "gm.html", {"title": "GM-Befehle", "commands": allowed_commands(user.gm_level)}, db)
+    try:
+        commands = normalize_db_commands(wowdb.gm_commands_from_db(all_config(db), selected_realm(request)), user.gm_level)
+        source_error = None
+    except Exception as exc:
+        commands = allowed_commands(user.gm_level)
+        source_error = str(exc)
+    grouped = {}
+    for command in commands:
+        grouped.setdefault(command["category"], []).append(command)
+    return render(request, "gm.html", {"title": "GM-Befehle", "commands": commands, "grouped_commands": grouped, "source_error": source_error}, db)
 
 
 def gm_run(request: Request, db: Session = Depends(get_db), user: PanelUser = Depends(require_level(1)), csrf: str = Form(...), command: str = Form(...), realm: str = Form("normal")):
@@ -221,12 +259,37 @@ def server_action(request: Request, db: Session = Depends(get_db), user: PanelUs
 
 def configs(request: Request, db: Session = Depends(get_db), user: PanelUser = Depends(require_level(3))):
     cfg = all_config(db)
-    roots = [cfg["server"]["normal_path"] + "/etc", cfg["server"]["normal_path"] + "/etc/modules", cfg["server"]["playerbot_path"] + "/etc", cfg["server"]["playerbot_path"] + "/etc/modules"]
+    realm = selected_realm(request)
+    base = cfg["server"]["playerbot_path"] if realm == "playerbot" else cfg["server"]["normal_path"]
+    roots = [base + "/etc", base + "/etc/modules"]
     try:
         options = scan_remote(SSHClient(cfg["server"]), roots)
     except Exception as exc:
         options = [{"file": "SSH", "key": "Fehler", "value": str(exc), "category": "Fehler"}]
-    return render(request, "configs.html", {"title": "Configs", "options": options}, db)
+    grouped = {}
+    for option in options:
+        if option.get("key") == "__error__":
+            group = "Fehler"
+        elif "ahbot" in option.get("file", "").lower():
+            group = "AHBot"
+        elif "playerbot" in option.get("file", "").lower():
+            group = "Playerbots"
+        elif "authserver" in option.get("file", "").lower():
+            group = "Authserver"
+        elif "worldserver" in option.get("file", "").lower():
+            key = option.get("key", "").lower()
+            if any(word in key for word in ["soap", "ra.", "console"]):
+                group = "Remotezugriff"
+            elif any(word in key for word in ["rate", "xp", "drop", "skill"]):
+                group = "Raten & Gameplay"
+            elif any(word in key for word in ["visibility", "map", "vmap", "mmap", "dbc"]):
+                group = "Karten & Daten"
+            else:
+                group = "Worldserver"
+        else:
+            group = option.get("category") or "Sonstige"
+        grouped.setdefault(group, {}).setdefault(option.get("file", "Unbekannt"), []).append(option)
+    return render(request, "configs.html", {"title": "Configs", "options": options, "grouped_options": grouped}, db)
 
 
 def config_save(request: Request, db: Session = Depends(get_db), user: PanelUser = Depends(require_level(3)), csrf: str = Form(...), path: str = Form(...), key: str = Form(...), value: str = Form(...)):
@@ -242,15 +305,31 @@ def config_save(request: Request, db: Session = Depends(get_db), user: PanelUser
 
 
 def ahbot(request: Request, db: Session = Depends(get_db), user: PanelUser = Depends(require_level(2))):
+    info = realm_cfg(all_config(db), selected_realm(request))
+    if not info["has_ahbot"]:
+        return render(request, "ahbot.html", {"title": "AHBot", "unavailable": True, "stats": {}}, db)
     try:
-        stats = wowdb.auction_stats(all_config(db))
+        stats = wowdb.auction_stats(all_config(db), selected_realm(request))
     except Exception as exc:
         stats = {"error": str(exc)}
     return render(request, "ahbot.html", {"title": "AHBot", "stats": stats}, db)
 
 
 def playerbots(request: Request, db: Session = Depends(get_db), user: PanelUser = Depends(require_level(2))):
-    return render(request, "playerbots.html", {"title": "Playerbots"}, db)
+    cfg = all_config(db)
+    info = realm_cfg(cfg, selected_realm(request))
+    if not info["has_playerbots"]:
+        return render(request, "playerbots.html", {"title": "Playerbots", "unavailable": True}, db)
+    try:
+        stats = {
+            "characters": wowdb.scalar(cfg["mysql"], cfg["mysql"]["pb_characters_db"], "SELECT COUNT(*) FROM characters"),
+            "online": wowdb.scalar(cfg["mysql"], cfg["mysql"]["pb_characters_db"], "SELECT COUNT(*) FROM characters WHERE online=1"),
+            "accounts": wowdb.scalar(cfg["mysql"], cfg["mysql"]["auth_db"], "SELECT COUNT(*) FROM account WHERE username LIKE 'BOT%' OR username LIKE 'PLAYERBOT%'"),
+        }
+        error = None
+    except Exception as exc:
+        stats, error = {}, str(exc)
+    return render(request, "playerbots.html", {"title": "Playerbots", "stats": stats, "error": error}, db)
 
 
 def logs(request: Request, db: Session = Depends(get_db), user: PanelUser = Depends(require_level(2))):

@@ -1,3 +1,14 @@
 {% extends "base.html" %}{% block content %}
-<section class="panel"><h2>Auktionshaus-Statistik</h2><pre>{{ stats }}</pre><p>AHBot-Optionen werden über <a href="/configs">Configs</a> in den mod_ahbot.conf-Dateien gepflegt. Nach Änderungen Realm neu starten.</p></section>
+{% if unavailable %}
+<section class="notice"><strong>{{ _("Feature unavailable") }}</strong></section>
+{% else %}
+<section class="cards">
+  <div class="card"><span>Auktionen</span><strong>{{ stats.get('total','?') }}</strong></div>
+  <div class="card"><span>Items</span><strong>{{ stats.get('items','?') }}</strong></div>
+  <div class="card"><span>Min. Buyout</span><strong>{{ stats.get('min_buyout','?') }}</strong></div>
+  <div class="card"><span>Max. Buyout</span><strong>{{ stats.get('max_buyout','?') }}</strong></div>
+</section>
+{% if stats.error %}<section class="notice"><strong>{{ _("Connection problem") }}</strong><p>{{ stats.error }}</p></section>{% endif %}
+<section class="panel"><p>AHBot-Optionen findest du im Config-Bereich unter dem Thema AHBot. Angezeigt wird nur der aktuell gewählte Realm.</p></section>
+{% endif %}
 {% endblock %}

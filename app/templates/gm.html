@@ -1,6 +1,7 @@
 {% extends "base.html" %}{% block content %}
 <section class="panel">
   <h2>GM-Befehl ausführen</h2>
+  {% if source_error %}<p class="hint">Live-Kommandoliste konnte nicht aus der World-DB gelesen werden. Es wird die eingebaute AzerothCore-Liste angezeigt.</p>{% endif %}
   <form method="post" action="/gm/run" class="grid-form">
     <input type="hidden" name="csrf" value="{{ csrf }}">
     <label>Realm<select name="realm"><option value="normal">Normal</option><option value="playerbot">Playerbot</option></select></label>
@@ -8,5 +9,20 @@
     <button class="primary">Protokollieren / senden</button>
   </form>
 </section>
-<section class="panel"><h2>Erlaubte Vorlagen</h2><div class="chips">{% for c in commands %}<span>{{ c.name }} · {{ c.template }}</span>{% endfor %}</div></section>
+<section class="command-grid">
+{% for category, items in grouped_commands.items() %}
+  <details class="panel command-section" open>
+    <summary>{{ category }} <span>{{ items|length }}</span></summary>
+    <div class="command-list">
+      {% for c in items %}
+      <button type="button" class="command-card" data-command="{{ c.template }}">
+        <strong>.{{ c.name }}</strong>
+        <small>GM {{ c.level }}</small>
+        <em>{{ c.help }}</em>
+      </button>
+      {% endfor %}
+    </div>
+  </details>
+{% endfor %}
+</section>
 {% endblock %}

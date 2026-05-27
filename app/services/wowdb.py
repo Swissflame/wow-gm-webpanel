@@ -10,7 +10,7 @@ def make_url(cfg: dict, database: str) -> str:
 
 
 def engine_for(mysql_cfg: dict, database: str) -> Engine:
-    return create_engine(make_url(mysql_cfg, database), pool_pre_ping=True, future=True)
+    return create_engine(make_url(mysql_cfg, database), pool_pre_ping=True, future=True, connect_args={"connect_timeout": 3})
 
 
 @contextmanager
@@ -45,21 +45,19 @@ def gm_level(mysql_cfg: dict, auth_db: str, account_id: int) -> int:
     return int(value or 0)
 
 
-def dashboard_stats(cfg: dict) -> dict:
+def dashboard_stats(cfg: dict, realm: str = "normal") -> dict:
     mysql = cfg["mysql"]
+    char_db = mysql["pb_characters_db"] if realm == "playerbot" else mysql["characters_db"]
     stats = {}
     stats["accounts"] = scalar(mysql, mysql["auth_db"], "SELECT COUNT(*) FROM account") or 0
-    stats["characters"] = scalar(mysql, mysql["characters_db"], "SELECT COUNT(*) FROM characters") or 0
-    stats["online"] = scalar(mysql, mysql["characters_db"], "SELECT COUNT(*) FROM characters WHERE online=1") or 0
-    stats["auctions"] = scalar(mysql, mysql["characters_db"], "SELECT COUNT(*) FROM auctionhouse") or 0
-    try:
-        stats["pb_characters"] = scalar(mysql, mysql["pb_characters_db"], "SELECT COUNT(*) FROM characters") or 0
-    except Exception:
-        stats["pb_characters"] = "n/a"
+    stats["characters"] = scalar(mysql, char_db, "SELECT COUNT(*) FROM characters") or 0
+    stats["online"] = scalar(mysql, char_db, "SELECT COUNT(*) FROM characters WHERE online=1") or 0
+    stats["auctions"] = scalar(mysql, char_db, "SELECT COUNT(*) FROM auctionhouse") or 0
+    stats["pb_characters"] = scalar(mysql, mysql["pb_characters_db"], "SELECT COUNT(*) FROM characters") if realm == "playerbot" else "n/a"
     return stats
 
 
-def online_players(cfg: dict) -> list[dict]:
+def online_players(cfg: dict, realm: str = "normal") -> list[dict]:
     mysql = cfg["mysql"]
     sql = """
     SELECT c.guid, c.name, c.account, a.username, c.level, c.race, c.class, c.zone, c.map,
@@ -72,17 +70,11 @@ def online_players(cfg: dict) -> list[dict]:
     GROUP BY c.guid
     ORDER BY c.name
     """.format(auth_db=mysql["auth_db"])
-    normal = rows(mysql, mysql["characters_db"], sql)
-    for row in normal:
-        row["realm"] = "Normal"
-    try:
-        pb = rows(mysql, mysql["pb_characters_db"], sql)
-        for row in pb:
-            row["realm"] = "Playerbot"
-        normal.extend(pb)
-    except Exception:
-        pass
-    return normal
+    char_db = mysql["pb_characters_db"] if realm == "playerbot" else mysql["characters_db"]
+    data = rows(mysql, char_db, sql)
+    for row in data:
+        row["realm"] = "Playerbot" if realm == "playerbot" else "Normal"
+    return data
 
 
 def search_accounts(cfg: dict, query: str = "", limit: int = 100) -> list[dict]:
@@ -99,7 +91,7 @@ def search_accounts(cfg: dict, query: str = "", limit: int = 100) -> list[dict]:
     return rows(mysql, mysql["auth_db"], sql, {"q": query, "likeq": f"%{query}%", "limit": limit})
 
 
-def search_characters(cfg: dict, query: str = "", limit: int = 100) -> list[dict]:
+def search_characters(cfg: dict, query: str = "", limit: int = 100, realm: str = "normal") -> list[dict]:
     mysql = cfg["mysql"]
     sql = """
     SELECT guid, account, name, level, race, class, gender, money, online, zone, map,
@@ -108,20 +100,21 @@ def search_characters(cfg: dict, query: str = "", limit: int = 100) -> list[dict
     WHERE (:q = '' OR name LIKE :likeq)
     ORDER BY level DESC, name LIMIT :limit
     """
-    data = rows(mysql, mysql["characters_db"], sql, {"q": query, "likeq": f"%{query}%", "limit": limit})
+    char_db = mysql["pb_characters_db"] if realm == "playerbot" else mysql["characters_db"]
+    data = rows(mysql, char_db, sql, {"q": query, "likeq": f"%{query}%", "limit": limit})
     for row in data:
-        row["realm"] = "Normal"
-    try:
-        pb = rows(mysql, mysql["pb_characters_db"], sql, {"q": query, "likeq": f"%{query}%", "limit": limit})
-        for row in pb:
-            row["realm"] = "Playerbot"
-        data.extend(pb)
-    except Exception:
-        pass
+        row["realm"] = "Playerbot" if realm == "playerbot" else "Normal"
     return data[:limit]
 
 
-def auction_stats(cfg: dict) -> dict:
+def auction_stats(cfg: dict, realm: str = "normal") -> dict:
     mysql = cfg["mysql"]
+    char_db = mysql["pb_characters_db"] if realm == "playerbot" else mysql["characters_db"]
     sql = "SELECT COUNT(*) total, MIN(buyoutprice) min_buyout, MAX(buyoutprice) max_buyout, SUM(item_count) items FROM auctionhouse"
-    return rows(mysql, mysql["characters_db"], sql)[0]
+    return rows(mysql, char_db, sql)[0]
+
+
+def gm_commands_from_db(cfg: dict, realm: str = "normal") -> list[dict]:
+    mysql = cfg["mysql"]
+    world_db = mysql["pb_world_db"] if realm == "playerbot" else mysql["world_db"]
+    return rows(mysql, world_db, "SELECT name, security, help FROM command ORDER BY security, name")

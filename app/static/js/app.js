@@ -158,7 +158,7 @@ document.addEventListener("DOMContentLoaded", () => {
 document.addEventListener("input", (event) => {
   if (event.target.id !== "configFilter") return;
   const needle = event.target.value.toLowerCase();
-  document.querySelectorAll(".config-row").forEach((row) => {
+  document.querySelectorAll(".config-row,.main-config-field").forEach((row) => {
     row.style.display = row.dataset.search.toLowerCase().includes(needle) ? "grid" : "none";
   });
 });

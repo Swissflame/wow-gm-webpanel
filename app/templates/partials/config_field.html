@@ -1,0 +1,17 @@
+<label class="main-config-field" data-search="{{ o.file_label }} {{ o.key }} {{ o.label }} {{ o.description }}">
+  <span>{{ o.label }}</span>
+  <small>{{ o.description }}</small>
+  {% if o.type == "boolean" %}
+  <select name="{{ o.form_name }}">
+    <option value="0" {% if o.value in ["0","false","False","no","No"] %}selected{% endif %}>Nein / deaktiviert</option>
+    <option value="1" {% if o.value in ["1","true","True","yes","Yes"] %}selected{% endif %}>Ja / aktiviert</option>
+  </select>
+  {% elif o.type == "number" %}
+  <input name="{{ o.form_name }}" type="number" step="any" value="{{ o.value }}">
+  {% elif o.sensitive %}
+  <input name="{{ o.form_name }}" value="********" autocomplete="off">
+  {% else %}
+  <input name="{{ o.form_name }}" value="{{ o.value }}">
+  {% endif %}
+  <em>{{ o.file_label }} · {{ o.key }} · Neustart: {{ o.requires_restart }}{% if o.default is not none %} · Default: {{ o.default }}{% endif %}</em>
+</label>

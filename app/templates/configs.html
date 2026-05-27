@@ -1,23 +1,64 @@
 {% extends "base.html" %}{% block content %}
-<section class="toolbar"><input id="configFilter" placeholder="Config suchen..."></section>
-{% for group, files in grouped_options.items() %}
-<details class="panel config-group" open>
-  <summary>{{ group }} <span>{{ files.values()|map('length')|sum }} Optionen</span></summary>
-  {% for file, items in files.items() %}
-  <details class="config-file">
-    <summary>{{ file }} <span>{{ items|length }}</span></summary>
-    <div class="config-list">
-    {% for o in items %}
-      <form method="post" action="/configs/save" class="config-row" data-search="{{ o.file }} {{ o.key }} {{ o.description }}">
-        <input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="path" value="{{ o.file }}"><input type="hidden" name="key" value="{{ o.key }}">
-        <div><strong>{{ o.key }}</strong><small>{{ o.description }}</small></div>
-        <label>{{ o.type }}<input name="value" value="{{ '********' if o.sensitive else o.value }}"></label>
-        <button>{{ _("Save") }}</button>
-      </form>
-    {% endfor %}
+{% if flash %}<section class="notice"><strong>Hauptconfigs</strong><p>{{ flash }}</p></section>{% endif %}
+{% for error in errors %}<section class="notice"><strong>{{ error.file }}</strong><p>{{ error.error }}</p></section>{% endfor %}
+
+<section class="main-config-page">
+  <section class="panel main-config-hero">
+    <div>
+      <h2>Normal-Realm Hauptkonfiguration</h2>
+      <p>Diese Seite bearbeitet nur <code>authserver.conf</code> und <code>worldserver.conf</code> des Normal-Realms. Playerbot-Configs und Module bleiben hier bewusst unangetastet.</p>
+      <ul>{% for line in summary %}<li>{{ line }}</li>{% endfor %}</ul>
     </div>
-  </details>
-  {% endfor %}
-</details>
-{% endfor %}
+    <div class="main-config-help">
+      <strong>Arbeitsweise</strong>
+      <p>Änderungen werden mit Backup gespeichert. Danach wird eine GM-Meldung gesendet und der betroffene Dienst zeitgesteuert neu gestartet.</p>
+    </div>
+  </section>
+
+  <form method="post" action="/configs/save" class="main-config-form">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <section class="panel main-config-toolbar">
+      <label>Config suchen<input id="configFilter" placeholder="z.B. XP, SOAP, Wetter, Tickets, Sichtweite"></label>
+      <label>Neustart in Sekunden<input name="restart_delay" type="number" min="10" value="60"></label>
+      <button class="primary">Änderungen speichern & Neustart planen</button>
+    </section>
+
+    {% for group in groups %}
+    <details class="panel config-topic" {% if loop.index <= 4 %}open{% endif %}>
+      <summary>{{ group.label }} <span>{{ group.count }} Optionen</span></summary>
+      {% if group.important %}
+      <div class="config-topic-section">
+        <h3>Wichtige Einstellungen</h3>
+        <div class="main-config-grid">
+          {% for o in group.important %}
+          {% include "partials/config_field.html" %}
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+      {% if group.advanced %}
+      <details class="config-advanced">
+        <summary>Weitere Optionen anzeigen <span>{{ group.advanced|length }}</span></summary>
+        <div class="main-config-grid">
+          {% for o in group.advanced %}
+          {% include "partials/config_field.html" %}
+          {% endfor %}
+        </div>
+      </details>
+      {% endif %}
+    </details>
+    {% endfor %}
+  </form>
+
+  <section class="panel">
+    <h2>Hauptconfig-Änderungslog</h2>
+    <table class="inner-table">
+      <tr><th>Zeit</th><th>Benutzer</th><th>Aktion</th><th>Ziel</th><th>Details</th></tr>
+      {% for row in logs %}
+      <tr><td>{{ row.created_at }}</td><td>{{ row.username }}</td><td>{{ row.action }}</td><td>{{ row.target }}</td><td><small>{{ row.detail }}</small></td></tr>
+      {% endfor %}
+    </table>
+    {% if not logs %}<p>Noch keine Hauptconfig-Änderungen protokolliert.</p>{% endif %}
+  </section>
+</section>
 {% endblock %}

@@ -22,6 +22,7 @@ from .services.gm_actions import TABS, build_command, event_actions, localized_a
 from .services.gm_transport import execute_gm_command
 from .services.server_metrics import collect_server_overview
 from .services.ahbot_config import grouped_fields, load_ahbot, reset_ahbot, save_ahbot, schedule_realm_restart, summarize
+from .services.main_config import grouped_main_configs, load_main_configs, save_main_configs, schedule_auth_restart, summarize_main_configs
 from .i18n import translate
 
 BASE = Path(__file__).resolve().parent
@@ -463,48 +464,69 @@ def server_action(request: Request, db: Session = Depends(get_db), user: PanelUs
 
 def configs(request: Request, db: Session = Depends(get_db), user: PanelUser = Depends(require_level(3))):
     cfg = all_config(db)
-    realm = selected_realm(request)
-    base = cfg["server"]["playerbot_path"] if realm == "playerbot" else cfg["server"]["normal_path"]
-    roots = [base + "/etc", base + "/etc/modules"]
     try:
-        options = scan_remote(SSHClient(cfg["server"]), roots)
+        options, errors = load_main_configs(cfg)
     except Exception as exc:
-        options = [{"file": "SSH", "key": "Fehler", "value": str(exc), "category": "Fehler"}]
-    grouped = {}
-    for option in options:
-        if option.get("key") == "__error__":
-            group = "Fehler"
-        elif "ahbot" in option.get("file", "").lower():
-            group = "AHBot"
-        elif "playerbot" in option.get("file", "").lower():
-            group = "Playerbots"
-        elif "authserver" in option.get("file", "").lower():
-            group = "Authserver"
-        elif "worldserver" in option.get("file", "").lower():
-            key = option.get("key", "").lower()
-            if any(word in key for word in ["soap", "ra.", "console"]):
-                group = "Remotezugriff"
-            elif any(word in key for word in ["rate", "xp", "drop", "skill"]):
-                group = "Raten & Gameplay"
-            elif any(word in key for word in ["visibility", "map", "vmap", "mmap", "dbc"]):
-                group = "Karten & Daten"
-            else:
-                group = "Worldserver"
-        else:
-            group = option.get("category") or "Sonstige"
-        grouped.setdefault(group, {}).setdefault(option.get("file", "Unbekannt"), []).append(option)
-    return render(request, "configs.html", {"title": "Configs", "options": options, "grouped_options": grouped}, db)
+        options, errors = [], [{"file": "SSH", "error": str(exc)}]
+    logs = db.execute(text("""
+        SELECT a.*, u.username
+        FROM audit_log a LEFT JOIN panel_users u ON u.id=a.user_id
+        WHERE a.action LIKE 'main_config_%'
+        ORDER BY a.id DESC LIMIT 80
+    """)).mappings().all()
+    flash = request.session.pop("config_flash", None)
+    return render(request, "configs.html", {
+        "title": "Hauptconfigs",
+        "options": options,
+        "groups": grouped_main_configs(options),
+        "summary": summarize_main_configs(options) if options else [],
+        "errors": errors,
+        "logs": logs,
+        "flash": flash,
+    }, db)
 
 
-def config_save(request: Request, db: Session = Depends(get_db), user: PanelUser = Depends(require_level(3)), csrf: str = Form(...), path: str = Form(...), key: str = Form(...), value: str = Form(...)):
-    if not verify_csrf(request, csrf):
+async def config_save(request: Request, db: Session = Depends(get_db), user: PanelUser = Depends(require_level(3))):
+    form = await request.form()
+    if not verify_csrf(request, form.get("csrf")):
         raise HTTPException(400, "CSRF")
-    ssh = SSHClient(all_config(db)["server"])
-    content = ssh.read_file(path)
-    backup = f"{path}.wowpanel.bak"
-    ssh.run(f"cp {path} {backup}", timeout=10)
-    ssh.write_file(path, update_value(content, key, value))
-    log_action(db, user.id, "config_change", path, f"{key} geändert; Backup: {backup}", request.client.host if request.client else None)
+    cfg = all_config(db)
+    values = {key: str(value) for key, value in form.items() if str(key).startswith("cfg::")}
+    try:
+        restart_delay = max(10, int(str(form.get("restart_delay") or "60")))
+    except ValueError:
+        restart_delay = 60
+    try:
+        changes, touched_files = save_main_configs(cfg, values)
+    except Exception as exc:
+        request.session["config_flash"] = f"Speichern fehlgeschlagen: {exc}"
+        log_action(db, user.id, "main_config_error", "normal", str(exc), request.client.host if request.client else None)
+        return RedirectResponse("/configs", status_code=303)
+    if not changes:
+        request.session["config_flash"] = "Keine Änderungen gefunden."
+        return RedirectResponse("/configs", status_code=303)
+    details = "\n".join(f"{path}: {key}: {old} -> {new}" for path, key, old, new in changes)
+    log_action(db, user.id, "main_config_change", "normal", details, request.client.host if request.client else None)
+    notify = f"Server-Hauptkonfiguration wurde geändert. Bitte ausloggen: Neustart in {restart_delay} Sekunden."
+    try:
+        notify_result = execute_gm_command(db, cfg, "normal", f"notify {notify}")
+    except Exception as exc:
+        notify_result = f"GM-Meldung konnte nicht gesendet werden: {exc}"
+    restart_results = []
+    if any(path.endswith("worldserver.conf") for path in touched_files):
+        try:
+            restart_results.append(schedule_realm_restart(cfg, "normal", restart_delay))
+        except Exception as exc:
+            restart_results.append(f"Worldserver-Neustart konnte nicht geplant werden: {exc}")
+    if any(path.endswith("authserver.conf") for path in touched_files):
+        try:
+            restart_results.append(schedule_auth_restart(cfg, restart_delay + 15))
+        except Exception as exc:
+            restart_results.append(f"Authserver-Neustart konnte nicht geplant werden: {exc}")
+    record_command(db, user.id, "normal", f"notify {notify}", notify_result)
+    record_command(db, user.id, "normal", f"main config restart {restart_delay}", "\n".join(restart_results))
+    log_action(db, user.id, "main_config_apply_restart", "normal", notify_result + "\n" + "\n".join(restart_results), request.client.host if request.client else None)
+    request.session["config_flash"] = f"{len(changes)} Änderung(en) gespeichert. {notify_result} {' '.join(restart_results)}"
     return RedirectResponse("/configs", status_code=303)
 
 

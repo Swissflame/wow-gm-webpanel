@@ -130,6 +130,20 @@ MANUAL = {
     "pet unlearn": ("Entfernt dem Pet einen Spell.", ".pet unlearn <spell_id>", CHAT_OUTPUT),
     "dismount": ("Laesst den Zielcharakter absitzen.", ".dismount [charaktername]", CHAT_OUTPUT),
     "reload all": ("Laedt Serverdaten neu. Kann kurz ruckeln; nicht jede Aenderung braucht das.", ".reload all", WEB_OUTPUT),
+    "flusharenapoints": ("Verteilt Arenapunkte anhand der Arenateam-Wertungen und startet eine neue Arena-Woche.", ".flusharenapoints", WEB_OUTPUT),
+    "linkgrave": ("Verknuepft den aktuellen Geistheiler/Friedhof mit einer Zone fuer eine Fraktion.", ".linkgrave <friedhof_id> <allianz|horde|beide>", WEB_OUTPUT),
+    "mmap": ("Zeigt oder prueft Movement-Map/Navmesh-Informationen fuer Wegfindung und Bots.", ".mmap <unterbefehl>", WEB_OUTPUT),
+    "movegens": ("Zeigt aktive Bewegungs-Generatoren einer Einheit, z.B. Idle, Chase oder Waypoint.", ".movegens [charaktername]", WEB_OUTPUT),
+    "pdump": ("Exportiert oder importiert einen Charakter-Dump.", ".pdump write|load <datei> [account] [charaktername]", WEB_OUTPUT),
+    "pooltools": ("Prueft und verwaltet Spawn-Pools fuer Creatures/GameObjects.", ".pooltools <unterbefehl>", WEB_OUTPUT),
+    "rbac": ("Zeigt oder aendert RBAC-Rechte fuer Accounts und Rollen.", ".rbac <account|role|permission> <unterbefehl>", WEB_OUTPUT),
+    "respawn": ("Laesst ausgewaehlte oder nahe Creatures/GameObjects neu spawnen.", ".respawn [distanz]", CHAT_OUTPUT),
+    "send": ("Sendet Post, Geld, Items oder Systemnachrichten an Charaktere.", ".send mail|money|items <charaktername> ...", CHAT_OUTPUT),
+    "setskill": ("Setzt einen Skillwert fuer den Zielcharakter.", ".setskill <skill_id> <wert> <maxwert> [charaktername]", CHAT_OUTPUT),
+    "spellinfo": ("Zeigt technische Informationen zu einem Spell.", ".spellinfo <spell_id>", WEB_OUTPUT),
+    "string": ("Sucht oder zeigt Servertexte aus der String-Tabelle.", ".string <suchtext|id>", WEB_OUTPUT),
+    "tickets": ("Listet oder verwaltet GM-Tickets.", ".tickets <unterbefehl>", WEB_OUTPUT),
+    "titles": ("Zeigt oder verwaltet Charaktertitel.", ".titles <add|remove|current> <titel_id> [charaktername]", CHAT_OUTPUT),
 }
 
 TARGET_BASED = {
@@ -197,15 +211,40 @@ def _syntax_from_help(name: str, help_text: str) -> str:
     if help_text:
         match = re.search(r"\.(\S.*)", help_text)
         if match:
-            return "." + match.group(1).strip().replace("$", "<").replace("  ", " ")
+            syntax = "." + match.group(1).strip()
+            syntax = re.split(r"\s+(?=Use it to|Displays?|Shows?|Lists?|Adds?|Removes?|Sets?|Teleports?|Starts?|Stops?|Reloads?|Resets?|Respawns?)", syntax, maxsplit=1, flags=re.I)[0]
+            syntax = syntax.replace("#", "<").replace("$", "<").replace("  ", " ")
+            syntax = re.sub(r"<([a-z0-9_ -]+)(?=\s|$)", r"<\1>", syntax, flags=re.I)
+            return syntax.strip()
     return "." + name
 
 
 def _translate_help(text: str) -> str:
-    value = (text or "").strip()
+    value = _description_from_db_help(text)
+    lower = value.lower()
+    phrase_map = {
+        "use it to distribute arena points based on arena team ratings, and start a new week.": "Verteilt Arenapunkte anhand der Arenateam-Wertungen und startet eine neue Arena-Woche.",
+        "distribute arena points based on arena team ratings, and start a new week.": "Verteilt Arenapunkte anhand der Arenateam-Wertungen und startet eine neue Arena-Woche.",
+        "respawn selected creature or gameobject.": "Laesst die ausgewaehlte Kreatur oder das ausgewaehlte GameObject neu spawnen.",
+        "revive selected player.": "Belebt den ausgewaehlten Spieler wieder.",
+        "save all players.": "Speichert alle geladenen Spielercharaktere.",
+        "show spell info.": "Zeigt technische Informationen zu einem Spell.",
+        "show area to selected player.": "Deckt dem ausgewaehlten Spieler ein Gebiet auf.",
+        "hide area from selected player.": "Verbirgt dem ausgewaehlten Spieler ein Gebiet.",
+    }
+    if lower in phrase_map:
+        return phrase_map[lower]
     replacements = [
         ("Syntax:", "Syntax:"),
         ("Usage:", "Anwendung:"),
+        ("Use it to", ""),
+        ("use it to", ""),
+        ("based on", "basierend auf"),
+        ("arena team ratings", "Arenateam-Wertungen"),
+        ("start a new week", "eine neue Woche starten"),
+        ("new week", "neue Woche"),
+        ("Distribute", "Verteilt"),
+        ("distribute", "verteilt"),
         ("Displays", "Zeigt"),
         ("Display", "Zeigt"),
         ("Shows", "Zeigt"),
@@ -220,18 +259,54 @@ def _translate_help(text: str) -> str:
         ("Removes", "Entfernt"),
         ("Teleport", "Teleportiert"),
         ("Teleports", "Teleportiert"),
+        ("Start", "Startet"),
+        ("Starts", "Startet"),
+        ("Stop", "Beendet"),
+        ("Stops", "Beendet"),
+        ("Reload", "Laedt neu"),
+        ("Reloads", "Laedt neu"),
+        ("Reset", "Setzt zurueck"),
+        ("Respawn", "Laesst neu spawnen"),
+        ("respawn", "neu spawnen"),
+        ("selected creature", "ausgewaehlte Kreatur"),
+        ("gameobject", "GameObject"),
         ("selected player", "ausgewaehlten Spieler"),
+        ("selected Player", "ausgewaehlten Spieler"),
         ("selected unit", "ausgewaehlte Einheit"),
+        ("selected Unit", "ausgewaehlte Einheit"),
+        ("player information", "Spielerinformationen"),
+        ("online players", "Online-Spieler"),
+        ("all players", "alle Spieler"),
         ("character", "Charakter"),
+        ("Character", "Charakter"),
         ("player", "Spieler"),
+        ("Player", "Spieler"),
         ("account", "Account"),
+        ("Account", "Account"),
         ("name", "Name"),
         ("password", "Passwort"),
         ("message", "Nachricht"),
+        ("points", "Punkte"),
+        ("rating", "Wertung"),
+        ("ratings", "Wertungen"),
     ]
     for old, new in replacements:
         value = value.replace(old, new)
-    return value
+    value = re.sub(r"\binformation\b", "Informationen", value, flags=re.I)
+    value = re.sub(r"\s+", " ", value).strip(" .")
+    if value:
+        return value[:1].upper() + value[1:] + "."
+    return "Fuehrt diesen AzerothCore-Befehl aus."
+
+
+def _description_from_db_help(text: str) -> str:
+    value = (text or "").strip()
+    if not value:
+        return ""
+    value = re.sub(r"^\s*(Syntax|Usage)\s*:\s*", "", value, flags=re.I)
+    value = re.sub(r"^\.[a-z0-9_ -]+(?:\s+[^.]*?(?:>|]|\w))?\s+(?=(Use it to|Displays?|Shows?|Lists?|Adds?|Removes?|Sets?|Teleports?|Starts?|Stops?|Reloads?|Resets?|Respawns?))", "", value, flags=re.I)
+    value = re.sub(r"^\.[a-z0-9_ -]+$", "", value.strip(), flags=re.I)
+    return value.strip() or text.strip()
 
 
 def _english_summary(name: str, db_help: str) -> str:

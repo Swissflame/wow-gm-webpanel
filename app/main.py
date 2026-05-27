@@ -253,6 +253,9 @@ def gm_console(request: Request, db: Session = Depends(get_db), user: PanelUser 
             items = [a for a in actions if a["tab"] == tab_id]
         tab_data.append({"id": tab_id, "label": en if lang == "en" else de, "actions": items})
     flash = request.session.pop("flash", None)
+    active_tab = request.query_params.get("tab") or request.session.pop("gm_active_tab", None) or "favorites"
+    if active_tab not in {tab["id"] for tab in tab_data}:
+        active_tab = "favorites"
     return render(request, "gm.html", {
         "title": "GM-Befehle",
         "commands": commands,
@@ -263,6 +266,7 @@ def gm_console(request: Request, db: Session = Depends(get_db), user: PanelUser 
         "online_chars": online_chars,
         "tabs": tab_data,
         "flash": flash,
+        "active_tab": active_tab,
     }, db)
 
 
@@ -293,10 +297,12 @@ async def gm_action(request: Request, db: Session = Depends(get_db), user: Panel
     record_command(db, user.id, realm, command, result)
     log_action(db, user.id, "gm_action", realm, f"{action['label']}: {command} -> {result}", request.client.host if request.client else None)
     request.session["flash"] = result
-    return RedirectResponse("/gm", status_code=303)
+    tab = form.get("active_tab") or action.get("tab") or "favorites"
+    request.session["gm_active_tab"] = tab
+    return RedirectResponse(f"/gm?tab={tab}", status_code=303)
 
 
-def gm_run(request: Request, db: Session = Depends(get_db), user: PanelUser = Depends(require_level(1)), csrf: str = Form(...), command: str = Form(...), realm: str = Form("normal")):
+def gm_run(request: Request, db: Session = Depends(get_db), user: PanelUser = Depends(require_level(1)), csrf: str = Form(...), command: str = Form(...), realm: str = Form("normal"), active_tab: str = Form("raw")):
     if not verify_csrf(request, csrf):
         raise HTTPException(400, "CSRF")
     allowed = [c["template"].split()[0] for c in allowed_commands(user.gm_level)]
@@ -305,7 +311,9 @@ def gm_run(request: Request, db: Session = Depends(get_db), user: PanelUser = De
     result = execute_gm_command(db, all_config(db), realm, command)
     record_command(db, user.id, realm, command, result)
     log_action(db, user.id, "gm_command", realm, command, request.client.host if request.client else None)
-    return RedirectResponse("/gm", status_code=303)
+    request.session["flash"] = result
+    request.session["gm_active_tab"] = active_tab or "raw"
+    return RedirectResponse(f"/gm?tab={active_tab or 'raw'}", status_code=303)
 
 
 def server(request: Request, db: Session = Depends(get_db), user: PanelUser = Depends(require_level(2))):

@@ -12,6 +12,10 @@ document.addEventListener("click", (event) => {
     const id = tab.dataset.tab;
     document.querySelectorAll(".gm-tab").forEach((item) => item.classList.toggle("active", item.dataset.tab === id));
     document.querySelectorAll(".gm-tab-panel").forEach((item) => item.classList.toggle("active", item.dataset.tabPanel === id));
+    document.querySelectorAll("input[name='active_tab']").forEach((input) => {
+      input.value = id;
+    });
+    try { sessionStorage.setItem("wowpanel.gmActiveTab", id); } catch {}
     return;
   }
   const favorite = event.target.closest(".favorite-toggle");
@@ -105,6 +109,16 @@ function syncFavorites() {
 }
 
 document.addEventListener("DOMContentLoaded", syncFavorites);
+document.addEventListener("DOMContentLoaded", () => {
+  const params = new URLSearchParams(window.location.search);
+  const id = params.get("tab") || sessionStorage.getItem("wowpanel.gmActiveTab");
+  if (!id) return;
+  document.querySelectorAll(".gm-tab").forEach((item) => item.classList.toggle("active", item.dataset.tab === id));
+  document.querySelectorAll(".gm-tab-panel").forEach((item) => item.classList.toggle("active", item.dataset.tabPanel === id));
+  document.querySelectorAll("input[name='active_tab']").forEach((input) => {
+    input.value = id;
+  });
+});
 
 document.addEventListener("input", (event) => {
   if (event.target.id !== "configFilter") return;

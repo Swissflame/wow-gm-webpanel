@@ -9,6 +9,12 @@ CATEGORIES = {
     "server": "Server", "reload": "Reload", "debug": "Debug", "cheat": "Cheats", "quest": "Quests",
     "achievement": "Achievements", "arena": "PvP", "honor": "PvP", "ticket": "Tickets", "learn": "Spells",
     "unlearn": "Spells", "cast": "Spells", "aura": "Spells", "mail": "Mail", "guild": "Gilden",
+    "event": "Events", "flusharenapoints": "Arena & PvP", "hidearea": "Karten & Gebiete",
+    "showarea": "Karten & Gebiete", "linkgrave": "Friedhoefe", "mmap": "Karten & Daten",
+    "movegens": "Bewegung", "pdump": "Charakter-Export", "pooltools": "Pool-System",
+    "rbac": "Rechte", "respawn": "Respawn", "revive": "Charaktere", "saveall": "Server",
+    "send": "Post", "setskill": "Skills", "spellinfo": "Spells", "string": "Texte",
+    "tickets": "Tickets", "titles": "Titel", "unaura": "Spells", "unfreeze": "Charaktere",
 }
 
 FALLBACK_COMMANDS = [

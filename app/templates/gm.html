@@ -1,19 +1,20 @@
 {% extends "base.html" %}{% block content %}
-{% if flash %}
-<section class="notice"><strong>Ergebnis</strong><p>{{ flash }}</p></section>
-{% endif %}
 {% if source_error %}<section class="notice"><strong>Hinweis</strong><p>Die Rohbefehle konnten nicht aus der World-DB gelesen werden. Die Aktionskarten funktionieren mit der eingebauten AzerothCore-Liste.</p></section>{% endif %}
 {% if character_error %}<section class="notice"><strong>Charakterliste</strong><p>{{ character_error }}</p></section>{% endif %}
 
 <section class="gm-workbench">
+  <section id="gmResultBox" class="result gm-result {% if not flash %}empty{% endif %}">
+    <strong>Ergebnis</strong>
+    <p>{% if flash %}{{ flash }}{% else %}Noch kein Befehl ausgeführt. Ergebnisse von GM-Befehlen erscheinen hier.{% endif %}</p>
+  </section>
   <div class="gm-tabs" role="tablist">
     {% for tab in tabs %}
-    <button type="button" class="gm-tab {% if loop.first %}active{% endif %}" data-tab="{{ tab.id }}">{{ tab.label }}</button>
+    <button type="button" class="gm-tab {% if tab.id == active_tab %}active{% endif %}" data-tab="{{ tab.id }}">{{ tab.label }}</button>
     {% endfor %}
   </div>
 
   {% for tab in tabs %}
-  <section class="gm-tab-panel {% if loop.first %}active{% endif %}" data-tab-panel="{{ tab.id }}">
+  <section class="gm-tab-panel {% if tab.id == active_tab %}active{% endif %}" data-tab-panel="{{ tab.id }}">
     {% if tab.id == "favorites" %}
       <div id="favoriteActions" class="action-grid"></div>
       <section id="favoriteEmpty" class="panel"><p>Noch keine Favoriten. Markiere Karten mit dem Stern oben rechts.</p></section>
@@ -23,6 +24,7 @@
       <form method="post" action="/gm/run" class="grid-form compact-form">
         <input type="hidden" name="csrf" value="{{ csrf }}">
         <input type="hidden" name="realm" value="{{ selected_realm }}">
+        <input type="hidden" name="active_tab" value="raw">
         <label>Befehl<input name="command" placeholder="server info" required></label>
         <button class="primary">Senden</button>
       </form>
@@ -52,6 +54,7 @@
       <form method="post" action="/gm/action" class="action-card" data-action-id="{{ action.id }}">
         <input type="hidden" name="csrf" value="{{ csrf }}">
         <input type="hidden" name="action_id" value="{{ action.id }}">
+        <input type="hidden" name="active_tab" value="{{ tab.id }}">
         <div class="action-head"><span>{{ action.icon }}</span><strong>{{ action.label }}</strong><small>GM {{ action.level }}</small><button type="button" class="favorite-toggle" data-favorite="{{ action.id }}" title="Favorit">☆</button></div>
         <p>{{ action.description }}</p>
         {% if action.warning %}<p class="action-warning">{{ action.warning }}</p>{% endif %}

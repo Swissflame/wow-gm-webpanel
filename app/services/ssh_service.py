@@ -42,7 +42,12 @@ class SSHClient:
 
     def write_file(self, path: str, content: str):
         marker = f"EOF_{int(time.time())}"
-        command = f"cat > /tmp/wowpanel_upload <<'{marker}'\n{content}\n{marker}\nsudo cp /tmp/wowpanel_upload {shell_quote(path)} && rm /tmp/wowpanel_upload"
+        target = shell_quote(path)
+        command = (
+            f"cat > /tmp/wowpanel_upload <<'{marker}'\n{content}\n{marker}\n"
+            f"cp /tmp/wowpanel_upload {target} || sudo -n cp /tmp/wowpanel_upload {target}\n"
+            "rc=$?\nrm -f /tmp/wowpanel_upload\nexit $rc"
+        )
         return self.run(command, timeout=30)
 
     def service_action(self, pattern: str, action: str) -> tuple[int, str, str]:
@@ -66,6 +71,7 @@ for i in $(seq 1 60); do
   sleep 1
 done
 for pid in $(find_pids); do kill -KILL "$pid" || true; done
+sleep 2
 """
         start_script = f"cd {shell_quote(workdir)} && nohup ./{binary} >{shell_quote(log)} 2>&1 & echo started"
         script = {

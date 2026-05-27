@@ -553,7 +553,12 @@ async def ahbot_save(request: Request, db: Session = Depends(get_db), user: Pane
         restart_delay = max(10, int(str(form.get("restart_delay") or "60")))
     except ValueError:
         restart_delay = 60
-    path, changes = save_ahbot(cfg, realm, values)
+    try:
+        path, changes = save_ahbot(cfg, realm, values)
+    except Exception as exc:
+        request.session["ahbot_flash"] = f"Speichern fehlgeschlagen: {exc}"
+        log_action(db, user.id, "ahbot_config_error", realm, str(exc), request.client.host if request.client else None)
+        return RedirectResponse("/ahbot", status_code=303)
     if changes:
         details = "\n".join(f"{key}: {old} -> {new}" for key, old, new in changes)
         log_action(db, user.id, "ahbot_config_change", path, details, request.client.host if request.client else None)

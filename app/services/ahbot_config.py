@@ -207,7 +207,9 @@ def save_ahbot(cfg: dict, realm: str, values: dict[str, str]) -> tuple[str, list
     if changes:
         backup = f"{path}.wowpanel.bak"
         ssh.run(f"cp {shell_quote(path)} {shell_quote(backup)}", timeout=10)
-        ssh.write_file(path, content)
+        code, out, err = ssh.write_file(path, content)
+        if code != 0:
+            raise RuntimeError(err or out or f"Config konnte nicht geschrieben werden: {path}")
     return path, changes
 
 
@@ -245,6 +247,13 @@ for pid in $(pgrep -x worldserver || true); do
     kill -KILL "$pid" || true
   fi
 done
+for port in {ports_for_realm(realm)}; do
+  for i in $(seq 1 60); do
+    ss -ltn "sport = :$port" | grep -q LISTEN || break
+    echo "[$(date -Is)] Waiting for port $port"
+    sleep 1
+  done
+done
 sleep 2
 cd {shell_quote(workdir)}
 echo "[$(date -Is)] Starting ./worldserver"
@@ -277,8 +286,14 @@ def reset_ahbot(cfg: dict, realm: str) -> tuple[str, list[tuple[str, str, str]],
         content = update_value(content, field.key, field.default)
         changes.append((field.key, field.value, field.default))
     if changes:
-        ssh.write_file(path, content)
+        code, out, err = ssh.write_file(path, content)
+        if code != 0:
+            raise RuntimeError(err or out or f"Config konnte nicht geschrieben werden: {path}")
     return path, changes, f"Defaults aus Kommentaren wiederhergestellt. Backup: {backup}"
+
+
+def ports_for_realm(realm: str) -> str:
+    return "8086 7879" if realm == "playerbot" else "8085 7878"
 
 
 def group_for(key: str) -> str:

@@ -18,7 +18,7 @@ from .services.realm import REALMS, selected_realm, realm_cfg
 from .services.ssh_service import SSHClient, test_port
 from .services.config_scanner import scan_remote, update_value
 from .services.gm import allowed_commands, normalize_db_commands, record_command
-from .services.gm_actions import TABS, FAVORITES, build_command, event_actions, localized_actions
+from .services.gm_actions import TABS, build_command, event_actions, localized_actions
 from .services.gm_transport import execute_gm_command
 from .i18n import translate
 
@@ -247,9 +247,7 @@ def gm_console(request: Request, db: Session = Depends(get_db), user: PanelUser 
         grouped.setdefault(command["category"], []).append(command)
     tab_data = []
     for tab_id, de, en in TABS:
-        if tab_id == "favorites":
-            items = [a for a in actions if a["id"] in FAVORITES]
-        elif tab_id == "raw":
+        if tab_id in {"favorites", "raw"}:
             items = []
         else:
             items = [a for a in actions if a["tab"] == tab_id]

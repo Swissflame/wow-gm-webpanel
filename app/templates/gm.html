@@ -14,13 +14,16 @@
 
   {% for tab in tabs %}
   <section class="gm-tab-panel {% if loop.first %}active{% endif %}" data-tab-panel="{{ tab.id }}">
-    {% if tab.id == "raw" %}
+    {% if tab.id == "favorites" %}
+      <div id="favoriteActions" class="action-grid"></div>
+      <section id="favoriteEmpty" class="panel"><p>Noch keine Favoriten. Markiere Karten mit dem Stern oben rechts.</p></section>
+    {% elif tab.id == "raw" %}
     <section class="panel">
       <h2>Expertenmodus</h2>
       <form method="post" action="/gm/run" class="grid-form compact-form">
         <input type="hidden" name="csrf" value="{{ csrf }}">
         <input type="hidden" name="realm" value="{{ selected_realm }}">
-        <label>Befehl<input name="command" placeholder="announce Wartung in 5 Minuten" required></label>
+        <label>Befehl<input name="command" placeholder="server info" required></label>
         <button class="primary">Senden</button>
       </form>
       <div class="raw-command-list">
@@ -35,10 +38,10 @@
     {% else %}
     <div class="action-grid">
       {% for action in tab.actions %}
-      <form method="post" action="/gm/action" class="action-card {% if action.character != 'none' %}needs-character{% endif %}">
+      <form method="post" action="/gm/action" class="action-card" data-action-id="{{ action.id }}">
         <input type="hidden" name="csrf" value="{{ csrf }}">
         <input type="hidden" name="action_id" value="{{ action.id }}">
-        <div class="action-head"><span>{{ action.icon }}</span><strong>{{ action.label }}</strong><small>GM {{ action.level }}</small></div>
+        <div class="action-head"><span>{{ action.icon }}</span><strong>{{ action.label }}</strong><small>GM {{ action.level }}</small><button type="button" class="favorite-toggle" data-favorite="{{ action.id }}" title="Favorit">☆</button></div>
         <p>{{ action.description }}</p>
         {% if action.character == "online" %}
         <label>Online-Charakter
@@ -49,17 +52,28 @@
         {% elif action.character == "any" %}
         <label>Charakter
           <select name="character" required>
-            {% for char in all_chars %}<option value="{{ char.name }}" class="{{ 'online' if char.online else 'offline' }}">{{ '●' if char.online else '●' }} {{ char.name }} · {{ char.level }}</option>{% endfor %}
+            {% for char in all_chars %}<option value="{{ char.name }}" class="{{ 'online' if char.online else 'offline' }}">{{ 'online' if char.online else 'offline' }} · {{ char.name }} · {{ char.level }}</option>{% endfor %}
           </select>
         </label>
         {% endif %}
+        <div class="action-fields">
         {% for field in action.inputs or [] %}
-        <label>{{ field.label }}
-          <input name="{{ field.name }}" type="{{ field.type }}" value="{{ field.default or '' }}" {% if field.required %}required{% endif %}>
-        </label>
+          <label>{{ field.label }}
+            {% if field.kind == "select" %}
+            <select name="{{ field.name }}">
+              {% for value, label in field.localized_options %}<option value="{{ value }}" {% if value == field.default %}selected{% endif %}>{{ label }}</option>{% endfor %}
+            </select>
+            {% else %}
+            <input name="{{ field.name }}" type="{{ field.kind or 'text' }}" value="{{ field.default or '' }}" {% if field.required %}required{% endif %}>
+            {% endif %}
+          </label>
         {% endfor %}
-        <code>.{{ action.command }}</code>
-        <button class="primary">Ausführen</button>
+        </div>
+        <div class="action-buttons">
+          {% for button in action.buttons %}
+          <button name="command_template" value="{{ button.command }}" class="primary">{{ button.label }}</button>
+          {% endfor %}
+        </div>
       </form>
       {% endfor %}
       {% if not tab.actions %}<section class="panel"><p>Keine Aktionen in diesem Bereich.</p></section>{% endif %}

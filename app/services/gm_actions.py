@@ -2,117 +2,6 @@ def tr(lang: str, de: str, en: str) -> str:
     return en if lang == "en" else de
 
 
-BASE_ACTIONS = [
-    {
-        "id": "weather_fine", "tab": "world", "level": 2, "icon": "☀", "character": "none",
-        "de": "Wetter schön", "en": "Weather fine",
-        "desc_de": "Setzt das Wetter in der aktuellen Zone auf klar.", "desc_en": "Sets weather in the current zone to clear.",
-        "command": "wchange 0 0",
-    },
-    {
-        "id": "weather_rain", "tab": "world", "level": 2, "icon": "☂", "character": "none",
-        "de": "Wetter Regen", "en": "Weather rain",
-        "desc_de": "Startet Regen in der aktuellen Zone.", "desc_en": "Starts rain in the current zone.",
-        "command": "wchange 1 3",
-    },
-    {
-        "id": "weather_snow", "tab": "world", "level": 2, "icon": "*", "character": "none",
-        "de": "Wetter Schnee", "en": "Weather snow",
-        "desc_de": "Startet Schneefall in der aktuellen Zone.", "desc_en": "Starts snow in the current zone.",
-        "command": "wchange 2 3",
-    },
-    {
-        "id": "announce", "tab": "communication", "level": 1, "icon": "!", "character": "none",
-        "de": "Ankündigung", "en": "Announcement",
-        "desc_de": "Sendet eine globale Nachricht an alle Spieler.", "desc_en": "Sends a global message to all players.",
-        "command": "announce {message}", "inputs": [{"name": "message", "type": "text", "de": "Nachricht", "en": "Message", "required": True}],
-    },
-    {
-        "id": "notify", "tab": "communication", "level": 1, "icon": "i", "character": "none",
-        "de": "Bildschirmmeldung", "en": "Screen notification",
-        "desc_de": "Zeigt online Spielern eine Systemmeldung.", "desc_en": "Shows online players a system notification.",
-        "command": "notify {message}", "inputs": [{"name": "message", "type": "text", "de": "Nachricht", "en": "Message", "required": True}],
-    },
-    {
-        "id": "kick", "tab": "characters", "level": 1, "icon": "X", "character": "online",
-        "de": "Spieler kicken", "en": "Kick player",
-        "desc_de": "Trennt einen online Charakter vom Server.", "desc_en": "Disconnects an online character.",
-        "command": "kick {character} {reason}", "inputs": [{"name": "reason", "type": "text", "de": "Grund", "en": "Reason"}],
-    },
-    {
-        "id": "revive", "tab": "characters", "level": 2, "icon": "+", "character": "online",
-        "de": "Wiederbeleben", "en": "Revive",
-        "desc_de": "Belebt einen online Charakter wieder.", "desc_en": "Revives an online character.",
-        "command": "revive {character}",
-    },
-    {
-        "id": "summon", "tab": "teleport", "level": 1, "icon": ">", "character": "online",
-        "de": "Zu mir rufen", "en": "Summon to me",
-        "desc_de": "Teleportiert einen online Charakter zu dir.", "desc_en": "Teleports an online character to you.",
-        "command": "summon {character}",
-    },
-    {
-        "id": "appear", "tab": "teleport", "level": 1, "icon": "<", "character": "online",
-        "de": "Zu Spieler gehen", "en": "Appear at player",
-        "desc_de": "Teleportiert dich zu einem online Charakter.", "desc_en": "Teleports you to an online character.",
-        "command": "appear {character}",
-    },
-    {
-        "id": "tele_name", "tab": "teleport", "level": 2, "icon": "@", "character": "any",
-        "de": "Spieler teleportieren", "en": "Teleport player",
-        "desc_de": "Teleportiert einen Charakter zu einem Teleport-Ort.", "desc_en": "Teleports a character to a named location.",
-        "command": "tele name {character} {location}", "inputs": [{"name": "location", "type": "text", "de": "Teleport-Ort", "en": "Teleport location", "required": True}],
-    },
-    {
-        "id": "level", "tab": "characters", "level": 3, "icon": "L", "character": "any",
-        "de": "Level setzen", "en": "Set level",
-        "desc_de": "Setzt das Level eines Charakters.", "desc_en": "Sets a character level.",
-        "command": "character level {character} {level}", "inputs": [{"name": "level", "type": "number", "de": "Level", "en": "Level", "required": True}],
-    },
-    {
-        "id": "rename", "tab": "characters", "level": 2, "icon": "R", "character": "any",
-        "de": "Umbenennung erzwingen", "en": "Force rename",
-        "desc_de": "Der Charakter muss beim nächsten Login einen neuen Namen wählen.", "desc_en": "Character must choose a new name on next login.",
-        "command": "character rename {character}",
-    },
-    {
-        "id": "customize", "tab": "characters", "level": 2, "icon": "C", "character": "any",
-        "de": "Aussehen ändern lassen", "en": "Force customization",
-        "desc_de": "Der Charakter kann beim nächsten Login Aussehen/Geschlecht ändern.", "desc_en": "Character can customize appearance on next login.",
-        "command": "character customize {character}",
-    },
-    {
-        "id": "send_money", "tab": "items", "level": 2, "icon": "G", "character": "any",
-        "de": "Post mit Geld senden", "en": "Send mail with money",
-        "desc_de": "Sendet einem Charakter Gold per Post.", "desc_en": "Sends money by mail to a character.",
-        "command": "send money {character} \"{subject}\" \"{body}\" {money}",
-        "inputs": [
-            {"name": "money", "type": "number", "de": "Kupferbetrag", "en": "Copper amount", "required": True},
-            {"name": "subject", "type": "text", "de": "Betreff", "en": "Subject", "default": "GM-Post"},
-            {"name": "body", "type": "text", "de": "Text", "en": "Body", "default": "Viel Spaß."},
-        ],
-    },
-    {
-        "id": "add_item", "tab": "items", "level": 2, "icon": "I", "character": "online",
-        "de": "Item geben", "en": "Give item",
-        "desc_de": "Gibt dem ausgewählten online Charakter ein Item.", "desc_en": "Gives an item to the selected online character.",
-        "command": "additem {item} {count}",
-        "inputs": [{"name": "item", "type": "number", "de": "Item-ID", "en": "Item ID", "required": True}, {"name": "count", "type": "number", "de": "Anzahl", "en": "Count", "default": "1"}],
-    },
-    {
-        "id": "saveall", "tab": "server", "level": 3, "icon": "S", "character": "none",
-        "de": "Alle speichern", "en": "Save all",
-        "desc_de": "Speichert alle Charaktere.", "desc_en": "Saves all characters.",
-        "command": "saveall",
-    },
-    {
-        "id": "reload_all", "tab": "server", "level": 3, "icon": "↻", "character": "none",
-        "de": "Reload all", "en": "Reload all",
-        "desc_de": "Lädt Serverdaten neu. Vorsichtig verwenden.", "desc_en": "Reloads server data. Use carefully.",
-        "command": "reload all",
-    },
-]
-
 TABS = [
     ("favorites", "Favoriten", "Favorites"),
     ("characters", "Charaktere", "Characters"),
@@ -125,7 +14,128 @@ TABS = [
     ("raw", "Expertenmodus", "Expert mode"),
 ]
 
-FAVORITES = {"announce", "revive", "summon", "appear", "send_money", "weather_fine", "weather_rain", "saveall"}
+
+BASE_ACTIONS = [
+    {
+        "id": "weather", "tab": "world", "level": 3, "icon": "W", "character": "none",
+        "de": "Wetter", "en": "Weather",
+        "desc_de": "Setzt Wetterart und Stärke in der aktuellen Zone.", "desc_en": "Sets weather type and intensity in the current zone.",
+        "command": "wchange {weather} {grade}",
+        "inputs": [
+            {"name": "weather", "kind": "select", "de": "Wetter", "en": "Weather", "default": "0",
+             "options": [("0", "Schön", "Fine"), ("1", "Regen", "Rain"), ("2", "Schnee", "Snow"), ("3", "Sturm", "Storm"), ("86", "Gewitter", "Thunder"), ("90", "Schwarzer Regen", "Black rain")]},
+            {"name": "grade", "kind": "select", "de": "Stärke", "en": "Intensity", "default": "1.0",
+             "options": [("0.0", "Aus", "Off"), ("0.25", "Leicht", "Light"), ("0.5", "Mittel", "Medium"), ("0.75", "Stark", "Strong"), ("1.0", "Maximum", "Maximum")]},
+        ],
+        "buttons": [{"label_de": "Wetter setzen", "label_en": "Set weather", "command": "wchange {weather} {grade}"}],
+    },
+    {
+        "id": "gm_mode", "tab": "characters", "level": 1, "icon": "GM", "character": "none",
+        "de": "GM-Modus", "en": "GM mode",
+        "desc_de": "Schaltet GM-Status, Sichtbarkeit und Flugmodus.", "desc_en": "Toggles GM status, visibility and fly mode.",
+        "buttons": [
+            {"label_de": "GM an", "label_en": "GM on", "command": "gm on"},
+            {"label_de": "GM aus", "label_en": "GM off", "command": "gm off"},
+            {"label_de": "Sichtbar", "label_en": "Visible", "command": "gm visible on"},
+            {"label_de": "Unsichtbar", "label_en": "Invisible", "command": "gm visible off"},
+            {"label_de": "Fliegen an", "label_en": "Fly on", "command": "gm fly on"},
+            {"label_de": "Fliegen aus", "label_en": "Fly off", "command": "gm fly off"},
+        ],
+    },
+    {
+        "id": "communication", "tab": "communication", "level": 2, "icon": "!", "character": "none",
+        "de": "Nachrichten", "en": "Messages",
+        "desc_de": "Sendet Nachrichten an Spieler oder GMs.", "desc_en": "Sends messages to players or GMs.",
+        "inputs": [{"name": "message", "kind": "text", "de": "Nachricht", "en": "Message", "required": True}],
+        "buttons": [
+            {"label_de": "An alle ankündigen", "label_en": "Announce to all", "command": "announce {message}"},
+            {"label_de": "Bildschirmmeldung", "label_en": "Screen notification", "command": "notify {message}"},
+            {"label_de": "GM-Ankündigung", "label_en": "GM announcement", "command": "gmannounce {message}"},
+            {"label_de": "GM-Bildschirmmeldung", "label_en": "GM screen notification", "command": "gmnotify {message}"},
+        ],
+    },
+    {
+        "id": "player_control", "tab": "characters", "level": 2, "icon": "C", "character": "any",
+        "de": "Charakter verwalten", "en": "Manage character",
+        "desc_de": "Häufige Aktionen für online und offline Charaktere.", "desc_en": "Common actions for online and offline characters.",
+        "inputs": [{"name": "level", "kind": "number", "de": "Level", "en": "Level", "default": "80"}],
+        "buttons": [
+            {"label_de": "Wiederbeleben", "label_en": "Revive", "command": "revive {character}", "online_only": True},
+            {"label_de": "Kicken", "label_en": "Kick", "command": "kick {character}"},
+            {"label_de": "Level setzen", "label_en": "Set level", "command": "character level {character} {level}"},
+            {"label_de": "Umbenennung", "label_en": "Rename", "command": "character rename {character}"},
+            {"label_de": "Aussehen ändern", "label_en": "Customize", "command": "character customize {character}"},
+            {"label_de": "Fraktion ändern", "label_en": "Change faction", "command": "character changefaction {character}"},
+            {"label_de": "Volk ändern", "label_en": "Change race", "command": "character changerace {character}"},
+        ],
+    },
+    {
+        "id": "teleport_tools", "tab": "teleport", "level": 2, "icon": "T", "character": "any",
+        "de": "Teleport", "en": "Teleport",
+        "desc_de": "Teleportiert dich oder den gewählten Charakter.", "desc_en": "Teleports you or the selected character.",
+        "inputs": [{"name": "location", "kind": "text", "de": "Teleport-Ort", "en": "Teleport location", "default": "$home"}],
+        "buttons": [
+            {"label_de": "Zu Spieler gehen", "label_en": "Appear at player", "command": "appear {character}"},
+            {"label_de": "Zu mir rufen", "label_en": "Summon", "command": "summon {character}"},
+            {"label_de": "Spieler zum Ort", "label_en": "Player to location", "command": "teleport name {character} {location}"},
+            {"label_de": "Ich zum Ort", "label_en": "Me to location", "command": "teleport {location}"},
+            {"label_de": "Spieler zum Ruhestein", "label_en": "Player to hearth", "command": "teleport name {character} $home"},
+        ],
+    },
+    {
+        "id": "mail_tools", "tab": "items", "level": 2, "icon": "M", "character": "any",
+        "de": "Post senden", "en": "Send mail",
+        "desc_de": "Sendet Post, Geld oder Items an einen Charakter.", "desc_en": "Sends mail, money or items to a character.",
+        "inputs": [
+            {"name": "subject", "kind": "text", "de": "Betreff", "en": "Subject", "default": "GM-Post"},
+            {"name": "body", "kind": "text", "de": "Text", "en": "Body", "default": "Viel Spass."},
+            {"name": "money", "kind": "number", "de": "Kupferbetrag", "en": "Copper amount", "default": "0"},
+            {"name": "item", "kind": "number", "de": "Item-ID", "en": "Item ID"},
+            {"name": "count", "kind": "number", "de": "Anzahl", "en": "Count", "default": "1"},
+        ],
+        "buttons": [
+            {"label_de": "Nur Text senden", "label_en": "Send text", "command": "send mail {character} \"{subject}\" \"{body}\""},
+            {"label_de": "Geld senden", "label_en": "Send money", "command": "send money {character} \"{subject}\" \"{body}\" {money}"},
+            {"label_de": "Item senden", "label_en": "Send item", "command": "send items {character} \"{subject}\" \"{body}\" {item}:{count}"},
+        ],
+    },
+    {
+        "id": "item_tools", "tab": "items", "level": 2, "icon": "I", "character": "any",
+        "de": "Items direkt", "en": "Direct items",
+        "desc_de": "Gibt oder entfernt Items beim ausgewählten Charakter.", "desc_en": "Gives or removes items from the selected character.",
+        "inputs": [{"name": "item", "kind": "number", "de": "Item-ID", "en": "Item ID", "required": True}, {"name": "count", "kind": "number", "de": "Anzahl", "en": "Count", "default": "1"}],
+        "buttons": [
+            {"label_de": "Item geben", "label_en": "Give item", "command": "additem {character} {item} {count}"},
+            {"label_de": "Item entfernen", "label_en": "Remove item", "command": "additem {character} {item} -{count}"},
+        ],
+    },
+    {
+        "id": "cheats", "tab": "characters", "level": 2, "icon": "CH", "character": "none",
+        "de": "Cheats", "en": "Cheats",
+        "desc_de": "Schaltet typische GM-Cheats für deinen aktuellen GM-Charakter.", "desc_en": "Toggles common GM cheats for your current GM character.",
+        "buttons": [
+            {"label_de": "Gottmodus an", "label_en": "God on", "command": "cheat god on"},
+            {"label_de": "Gottmodus aus", "label_en": "God off", "command": "cheat god off"},
+            {"label_de": "Abklingzeiten aus", "label_en": "Cooldown off", "command": "cheat cooldown on"},
+            {"label_de": "Castzeit aus", "label_en": "Cast time off", "command": "cheat casttime on"},
+            {"label_de": "Alle Flugpunkte", "label_en": "All taxi nodes", "command": "cheat taxi on"},
+            {"label_de": "Wasserlaufen", "label_en": "Waterwalk", "command": "cheat waterwalk on"},
+        ],
+    },
+    {
+        "id": "server_tools", "tab": "server", "level": 2, "icon": "S", "character": "none",
+        "de": "Server", "en": "Server",
+        "desc_de": "Serverinformationen, Speichern und geplante Neustarts.", "desc_en": "Server info, saves and scheduled restarts.",
+        "inputs": [{"name": "delay", "kind": "text", "de": "Verzoegerung", "en": "Delay", "default": "60"}],
+        "buttons": [
+            {"label_de": "Serverinfo", "label_en": "Server info", "command": "server info"},
+            {"label_de": "Alle speichern", "label_en": "Save all", "command": "saveall"},
+            {"label_de": "Neustart planen", "label_en": "Schedule restart", "command": "server restart {delay}"},
+            {"label_de": "Neustart abbrechen", "label_en": "Cancel restart", "command": "server restart cancel"},
+            {"label_de": "Reload all", "label_en": "Reload all", "command": "reload all"},
+        ],
+    },
+]
 
 
 def localized_actions(lang: str, gm_level: int) -> list[dict]:
@@ -133,11 +143,18 @@ def localized_actions(lang: str, gm_level: int) -> list[dict]:
     for action in BASE_ACTIONS:
         if gm_level < action["level"]:
             continue
-        item = action.copy()
-        item["label"] = tr(lang, item["de"], item["en"])
-        item["description"] = tr(lang, item["desc_de"], item["desc_en"])
-        for field in item.get("inputs", []):
-            field["label"] = tr(lang, field["de"], field["en"])
+        item = {k: v for k, v in action.items() if k not in {"de", "en", "desc_de", "desc_en"}}
+        item["label"] = tr(lang, action["de"], action["en"])
+        item["description"] = tr(lang, action["desc_de"], action["desc_en"])
+        inputs = []
+        for field in action.get("inputs", []):
+            f = field.copy()
+            f["label"] = tr(lang, f.get("de", f["name"]), f.get("en", f["name"]))
+            if f.get("options"):
+                f["localized_options"] = [(value, tr(lang, de, en)) for value, de, en in f["options"]]
+            inputs.append(f)
+        item["inputs"] = inputs
+        item["buttons"] = [{**button, "label": tr(lang, button["label_de"], button["label_en"])} for button in action.get("buttons", [])]
         actions.append(item)
     return actions
 
@@ -149,7 +166,7 @@ def event_actions(events: list[dict], lang: str, gm_level: int) -> list[dict]:
         "darkmoon": ("Dunkelmond-Jahrmarkt", "Darkmoon Faire"),
         "dunkelmond": ("Dunkelmond-Jahrmarkt", "Darkmoon Faire"),
         "brewfest": ("Braufest", "Brewfest"),
-        "hallow": ("Schlotternächte", "Hallow's End"),
+        "hallow": ("Schlotternaechte", "Hallow's End"),
         "winter veil": ("Winterhauchfest", "Winter Veil"),
         "midsummer": ("Sonnenwendfest", "Midsummer Fire Festival"),
         "noblegarden": ("Nobelgarten", "Noblegarden"),
@@ -169,41 +186,33 @@ def event_actions(events: list[dict], lang: str, gm_level: int) -> list[dict]:
     for names, event_id in picked.items():
         display = names[1] if lang == "en" else names[0]
         actions.append({
-            "id": f"event_start_{event_id}", "tab": "events", "level": 3, "icon": ">", "character": "none",
-            "label": f"{display} startet" if lang == "de" else f"Start {display}",
-            "description": f"Startet Event-ID {event_id}." if lang == "de" else f"Starts event ID {event_id}.",
-            "command": f"event start {event_id}",
+            "id": f"event_{event_id}", "tab": "events", "level": 3, "icon": "E", "character": "none",
+            "label": display,
+            "description": f"Event-ID {event_id} starten oder beenden." if lang == "de" else f"Start or stop event ID {event_id}.",
+            "inputs": [],
+            "buttons": [
+                {"label": "Starten" if lang == "de" else "Start", "command": f"event start {event_id}"},
+                {"label": "Beenden" if lang == "de" else "Stop", "command": f"event stop {event_id}"},
+            ],
         })
-        actions.append({
-            "id": f"event_stop_{event_id}", "tab": "events", "level": 3, "icon": "X", "character": "none",
-            "label": f"{display} endet" if lang == "de" else f"Stop {display}",
-            "description": f"Beendet Event-ID {event_id}." if lang == "de" else f"Stops event ID {event_id}.",
-            "command": f"event stop {event_id}",
-        })
-    actions.extend([
-        {
-            "id": "event_custom_start", "tab": "events", "level": 3, "icon": ">", "character": "none",
-            "label": "Event-ID starten" if lang == "de" else "Start event ID",
-            "description": "Startet ein beliebiges Event per ID." if lang == "de" else "Starts any event by ID.",
-            "command": "event start {event_id}",
-            "inputs": [{"name": "event_id", "type": "number", "de": "Event-ID", "en": "Event ID", "required": True, "label": "Event-ID" if lang == "de" else "Event ID"}],
-        },
-        {
-            "id": "event_custom_stop", "tab": "events", "level": 3, "icon": "X", "character": "none",
-            "label": "Event-ID beenden" if lang == "de" else "Stop event ID",
-            "description": "Beendet ein beliebiges Event per ID." if lang == "de" else "Stops any event by ID.",
-            "command": "event stop {event_id}",
-            "inputs": [{"name": "event_id", "type": "number", "de": "Event-ID", "en": "Event ID", "required": True, "label": "Event-ID" if lang == "de" else "Event ID"}],
-        },
-    ])
+    actions.append({
+        "id": "event_custom", "tab": "events", "level": 3, "icon": "ID", "character": "none",
+        "label": "Event-ID" if lang == "de" else "Event ID",
+        "description": "Beliebiges Event per ID starten oder beenden." if lang == "de" else "Start or stop any event by ID.",
+        "inputs": [{"name": "event_id", "kind": "number", "label": "Event-ID" if lang == "de" else "Event ID", "required": True}],
+        "buttons": [
+            {"label": "Starten" if lang == "de" else "Start", "command": "event start {event_id}"},
+            {"label": "Beenden" if lang == "de" else "Stop", "command": "event stop {event_id}"},
+        ],
+    })
     return actions
 
 
 def build_command(action: dict, form: dict) -> str:
     values = {key: str(value).strip() for key, value in form.items()}
-    command = action["command"]
-    if action.get("character") in {"any", "online"}:
-        values["character"] = values.get("character", "")
     for field in action.get("inputs", []):
         values.setdefault(field["name"], field.get("default", ""))
+    if action.get("character") in {"any", "online"}:
+        values["character"] = values.get("character", "")
+    command = values.get("command_template") or (action.get("buttons", [{}])[0].get("command") if action.get("buttons") else action.get("command", ""))
     return command.format(**values).strip()

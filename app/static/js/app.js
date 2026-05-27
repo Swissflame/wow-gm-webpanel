@@ -14,6 +14,16 @@ document.addEventListener("click", (event) => {
     document.querySelectorAll(".gm-tab-panel").forEach((item) => item.classList.toggle("active", item.dataset.tabPanel === id));
     return;
   }
+  const favorite = event.target.closest(".favorite-toggle");
+  if (favorite) {
+    const favorites = readFavorites();
+    const id = favorite.dataset.favorite;
+    if (favorites.has(id)) favorites.delete(id);
+    else favorites.add(id);
+    localStorage.setItem("wowpanel.gmFavorites", JSON.stringify([...favorites]));
+    syncFavorites();
+    return;
+  }
   const card = event.target.closest("[data-command]");
   if (!card) return;
   const input = document.querySelector("input[name='command']");
@@ -22,6 +32,35 @@ document.addEventListener("click", (event) => {
     input.focus();
   }
 });
+
+function readFavorites() {
+  try {
+    return new Set(JSON.parse(localStorage.getItem("wowpanel.gmFavorites") || "[]"));
+  } catch {
+    return new Set();
+  }
+}
+
+function syncFavorites() {
+  const favorites = readFavorites();
+  document.querySelectorAll(".favorite-toggle").forEach((button) => {
+    const active = favorites.has(button.dataset.favorite);
+    button.classList.toggle("active", active);
+    button.textContent = active ? "★" : "☆";
+  });
+  const target = document.querySelector("#favoriteActions");
+  const empty = document.querySelector("#favoriteEmpty");
+  if (!target) return;
+  target.innerHTML = "";
+  document.querySelectorAll(".action-card[data-action-id]").forEach((card) => {
+    if (!favorites.has(card.dataset.actionId)) return;
+    const clone = card.cloneNode(true);
+    target.appendChild(clone);
+  });
+  if (empty) empty.style.display = target.children.length ? "none" : "block";
+}
+
+document.addEventListener("DOMContentLoaded", syncFavorites);
 
 document.addEventListener("input", (event) => {
   if (event.target.id !== "configFilter") return;

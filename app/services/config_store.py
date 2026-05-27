@@ -29,6 +29,15 @@ DEFAULTS = {
         "playerbot_world_port": 8086,
     },
     "language": "de",
+    "gm_transport": {
+        "mode": "disabled",
+        "username": "",
+        "password": "",
+        "normal_host": "192.168.1.118",
+        "normal_port": 7878,
+        "playerbot_host": "192.168.1.118",
+        "playerbot_port": 7879,
+    },
     "setup_complete": False,
 }
 

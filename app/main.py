@@ -21,6 +21,7 @@ from .services.gm import allowed_commands, normalize_db_commands, record_command
 from .services.gm_actions import TABS, build_command, event_actions, localized_actions
 from .services.gm_transport import execute_gm_command
 from .services.server_metrics import collect_server_overview
+from .services.ahbot_config import grouped_fields, load_ahbot, reset_ahbot, save_ahbot, summarize
 from .i18n import translate
 
 BASE = Path(__file__).resolve().parent
@@ -66,6 +67,8 @@ def create_app() -> FastAPI:
     app.add_api_route("/configs", configs, methods=["GET"], response_class=HTMLResponse)
     app.add_api_route("/configs/save", config_save, methods=["POST"])
     app.add_api_route("/ahbot", ahbot, methods=["GET"], response_class=HTMLResponse)
+    app.add_api_route("/ahbot/save", ahbot_save, methods=["POST"])
+    app.add_api_route("/ahbot/reset", ahbot_reset, methods=["POST"])
     app.add_api_route("/playerbots", playerbots, methods=["GET"], response_class=HTMLResponse)
     app.add_api_route("/logs", logs, methods=["GET"], response_class=HTMLResponse)
     app.add_api_route("/backup", backup, methods=["GET"], response_class=HTMLResponse)
@@ -506,14 +509,79 @@ def config_save(request: Request, db: Session = Depends(get_db), user: PanelUser
 
 
 def ahbot(request: Request, db: Session = Depends(get_db), user: PanelUser = Depends(require_level(2))):
-    info = realm_cfg(all_config(db), selected_realm(request))
+    cfg = all_config(db)
+    realm = selected_realm(request)
+    info = realm_cfg(cfg, realm)
     if not info["has_ahbot"]:
         return render(request, "ahbot.html", {"title": "AHBot", "unavailable": True, "stats": {}}, db)
     try:
-        stats = wowdb.auction_stats(all_config(db), selected_realm(request))
+        stats = wowdb.auction_stats(cfg, realm)
     except Exception as exc:
         stats = {"error": str(exc)}
-    return render(request, "ahbot.html", {"title": "AHBot", "stats": stats}, db)
+    try:
+        path, fields = load_ahbot(cfg, realm)
+        config_error = None
+    except Exception as exc:
+        path, fields, config_error = "", [], str(exc)
+    logs = db.execute(text("""
+        SELECT a.*, u.username
+        FROM audit_log a LEFT JOIN panel_users u ON u.id=a.user_id
+        WHERE a.action LIKE 'ahbot_%'
+        ORDER BY a.id DESC LIMIT 80
+    """)).mappings().all()
+    flash = request.session.pop("ahbot_flash", None)
+    return render(request, "ahbot.html", {
+        "title": "AHBot",
+        "stats": stats,
+        "path": path,
+        "groups": grouped_fields(fields),
+        "summary": summarize(fields) if fields else [],
+        "config_error": config_error,
+        "logs": logs,
+        "flash": flash,
+    }, db)
+
+
+async def ahbot_save(request: Request, db: Session = Depends(get_db), user: PanelUser = Depends(require_level(3))):
+    form = await request.form()
+    if not verify_csrf(request, form.get("csrf")):
+        raise HTTPException(400, "CSRF")
+    cfg = all_config(db)
+    realm = selected_realm(request)
+    values = {key: str(value) for key, value in form.items() if key.startswith("AuctionHouseBot.")}
+    try:
+        restart_delay = max(10, int(str(form.get("restart_delay") or "60")))
+    except ValueError:
+        restart_delay = 60
+    path, changes = save_ahbot(cfg, realm, values)
+    if changes:
+        details = "\n".join(f"{key}: {old} -> {new}" for key, old, new in changes)
+        log_action(db, user.id, "ahbot_config_change", path, details, request.client.host if request.client else None)
+        notify = f"Serverkonfiguration wurde geändert. Server startet in {restart_delay} Sekunden neu."
+        notify_result = execute_gm_command(db, cfg, realm, f"notify {notify}")
+        restart_result = execute_gm_command(db, cfg, realm, f"server restart {restart_delay}")
+        record_command(db, user.id, realm, f"notify {notify}", notify_result)
+        record_command(db, user.id, realm, f"server restart {restart_delay}", restart_result)
+        log_action(db, user.id, "ahbot_apply_restart", realm, f"{notify_result}\n{restart_result}", request.client.host if request.client else None)
+        request.session["ahbot_flash"] = f"{len(changes)} Einstellung(en) gespeichert. Neustart in {restart_delay} Sekunden geplant."
+    else:
+        request.session["ahbot_flash"] = "Keine Änderungen gefunden."
+    return RedirectResponse("/ahbot", status_code=303)
+
+
+def ahbot_reset(request: Request, db: Session = Depends(get_db), user: PanelUser = Depends(require_level(3)), csrf: str = Form(...), confirm: str = Form("")):
+    if not verify_csrf(request, csrf):
+        raise HTTPException(400, "CSRF")
+    if confirm != "ORIGINAL":
+        request.session["ahbot_flash"] = "Zurücksetzen abgebrochen: Bitte ORIGINAL als Bestätigung eingeben."
+        return RedirectResponse("/ahbot", status_code=303)
+    cfg = all_config(db)
+    realm = selected_realm(request)
+    path, changes, message = reset_ahbot(cfg, realm)
+    details = message + ("\n" + "\n".join(f"{key}: {old} -> {new}" for key, old, new in changes) if changes else "")
+    log_action(db, user.id, "ahbot_reset_original", path, details, request.client.host if request.client else None)
+    request.session["ahbot_flash"] = message
+    return RedirectResponse("/ahbot", status_code=303)
 
 
 def playerbots(request: Request, db: Session = Depends(get_db), user: PanelUser = Depends(require_level(2))):

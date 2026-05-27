@@ -151,6 +151,12 @@ META = {
     "Rate.Creature.Normal.Damage": ("Kreaturen-Schaden normal", "Multiplikator fuer Schaden normaler Kreaturen. Niedriger macht die offene Welt entspannter, hoeher macht sie gefaehrlicher."),
     "Rate.Creature.Elite.Elite.HP": ("Elite-Leben", "Multiplikator fuer Elite-Gegner. Beeinflusst Gruppenquests und Dungeons spuerbar."),
     "Rate.Creature.Elite.Elite.Damage": ("Elite-Schaden", "Multiplikator fuer Elite-Schaden. Zu hoch macht Gruppencontent schnell frustrierend."),
+    "Corpse.Decay.NORMAL": ("Leichnam-Dauer: normale Gegner", "Zeit in Sekunden, wie lange der Leichnam eines normalen getöteten Gegners in der Welt liegen bleibt. Danach verschwindet er optisch aus dem Spiel. Höher wirkt natürlicher und gibt mehr Zeit zum Plündern; sehr hohe Werte können in stark bespielten Gebieten mehr Objekte sichtbar halten."),
+    "Corpse.Decay.RARE": ("Leichnam-Dauer: seltene Gegner", "Zeit in Sekunden, wie lange der Leichnam eines seltenen Gegners liegen bleibt. Seltene Gegner bleiben meist länger sichtbar, damit Spieler den Kill und die Beute nicht sofort verlieren."),
+    "Corpse.Decay.ELITE": ("Leichnam-Dauer: Elite-Gegner", "Zeit in Sekunden, wie lange Elite-Gegner nach dem Tod sichtbar bleiben. Betrifft viele Gruppen- und Dungeon-Gegner. Höhere Werte geben Gruppen mehr Ruhe beim Plündern."),
+    "Corpse.Decay.RAREELITE": ("Leichnam-Dauer: seltene Elite-Gegner", "Zeit in Sekunden, wie lange seltene Elite-Gegner nach dem Tod sichtbar bleiben. Diese Gegner sind besonderer als normale Mobs, deshalb ist ein längerer Wert meistens sinnvoll."),
+    "Corpse.Decay.WORLDBOSS": ("Leichnam-Dauer: Weltbosse", "Zeit in Sekunden, wie lange ein Weltboss-Leichnam liegen bleibt. Lange Zeiten sind hier normal, damit Spieler den Kill sehen, Beute verteilen und Screenshots machen können."),
+    "Rate.Corpse.Decay.Looted": ("Leichnam-Dauer nach dem Plündern", "Multiplikator für die verbleibende Leichnam-Zeit, nachdem ein Gegner geplündert wurde. 0.5 bedeutet: geplünderte Leichname verschwinden etwa doppelt so schnell. Höher lässt geplünderte Körper länger liegen, niedriger räumt die Welt schneller auf."),
     "ActivateWeather": ("Wetter aktiv", "Aktiviert dynamisches Wetter. Spieler sehen Regen, Schnee oder Sandsturm je nach Zone. Aus spart etwas Logik, macht die Welt aber statischer."),
     "ChangeWeatherInterval": ("Wetterwechsel-Intervall", "Zeit in Millisekunden zwischen Wetter-Aktualisierungen. Niedriger wirkt lebendiger, kann aber haeufige Wetterwechsel erzeugen."),
     "AllowTickets": ("Tickets erlauben", "Aktiviert das GM-Ticketsystem. Spieler koennen Hilfeanfragen erstellen; GMs sehen und bearbeiten sie ingame."),
@@ -370,6 +376,8 @@ def enrich(option: ConfigOption) -> dict:
 def field_type(option: ConfigOption, choices: list[dict]) -> str:
     if option.sensitive:
         return "password"
+    if option.key.startswith("Corpse.Decay."):
+        return "number"
     if option.key in FORCE_BOOLEAN_KEYS:
         return "boolean"
     if option.key in FORCE_ENUM_KEYS and choices:
@@ -429,7 +437,7 @@ def cleanup_choice(text: str) -> str:
 def describe(option: ConfigOption) -> tuple[str, str]:
     if option.key in META:
         return META[option.key]
-    label = option.key.replace(".", " ").replace("_", " ")
+    label = human_label(option.key)
     prefix_desc = description_by_prefix(option.key)
     original = cleanup_original(option.description)
     if original and prefix_desc:
@@ -439,6 +447,35 @@ def describe(option: ConfigOption) -> tuple[str, str]:
     if original:
         return label, f"{original} Wirkung im Spiel oder Betrieb haengt vom genauen AzerothCore-Modul ab; vor Aenderung Wert, Einheit und Neustartbedarf pruefen."
     return label, "Spezialoption aus der AzerothCore-Hauptkonfiguration. Aendere diesen Wert nur, wenn du die Folge kennst oder gezielt testest; viele Werte wirken erst nach Neustart."
+
+
+def human_label(key: str) -> str:
+    label = key.replace(".", " ").replace("_", " ")
+    replacements = {
+        "Corpse Decay": "Leichnam-Dauer",
+        "Rate Corpse Decay Looted": "Leichnam-Dauer nach dem Plündern",
+        "Creature": "Kreatur",
+        "Creatures": "Kreaturen",
+        "Player": "Spieler",
+        "Players": "Spieler",
+        "Quest": "Quest",
+        "Quests": "Quests",
+        "Battleground": "Schlachtfeld",
+        "Arena": "Arena",
+        "Guild": "Gilde",
+        "Mail": "Post",
+        "Weather": "Wetter",
+        "Visibility": "Sichtweite",
+        "Distance": "Distanz",
+        "Normal": "Normal",
+        "Rare": "Selten",
+        "Elite": "Elite",
+        "Rareelite": "Seltene Elite",
+        "Worldboss": "Weltboss",
+    }
+    for old, new in replacements.items():
+        label = re.sub(rf"\b{re.escape(old)}\b", new, label, flags=re.I)
+    return label
 
 
 def description_by_prefix(key: str) -> str:

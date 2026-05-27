@@ -7,6 +7,13 @@ document.addEventListener("submit", (event) => {
 });
 
 document.addEventListener("click", (event) => {
+  const tab = event.target.closest(".gm-tab");
+  if (tab) {
+    const id = tab.dataset.tab;
+    document.querySelectorAll(".gm-tab").forEach((item) => item.classList.toggle("active", item.dataset.tab === id));
+    document.querySelectorAll(".gm-tab-panel").forEach((item) => item.classList.toggle("active", item.dataset.tabPanel === id));
+    return;
+  }
   const card = event.target.closest("[data-command]");
   if (!card) return;
   const input = document.querySelector("input[name='command']");

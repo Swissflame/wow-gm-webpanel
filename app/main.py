@@ -18,6 +18,8 @@ from .services.realm import REALMS, selected_realm, realm_cfg
 from .services.ssh_service import SSHClient, test_port
 from .services.config_scanner import scan_remote, update_value
 from .services.gm import allowed_commands, normalize_db_commands, record_command
+from .services.gm_actions import TABS, FAVORITES, build_command, event_actions, localized_actions
+from .services.gm_transport import execute_gm_command
 from .i18n import translate
 
 BASE = Path(__file__).resolve().parent
@@ -49,6 +51,7 @@ def create_app() -> FastAPI:
     app.add_api_route("/characters", characters, methods=["GET"], response_class=HTMLResponse)
     app.add_api_route("/gm", gm_console, methods=["GET"], response_class=HTMLResponse)
     app.add_api_route("/gm/run", gm_run, methods=["POST"])
+    app.add_api_route("/gm/action", gm_action, methods=["POST"])
     app.add_api_route("/server", server, methods=["GET"], response_class=HTMLResponse)
     app.add_api_route("/server/action", server_action, methods=["POST"])
     app.add_api_route("/configs", configs, methods=["GET"], response_class=HTMLResponse)
@@ -219,16 +222,80 @@ def characters(request: Request, q: str = "", db: Session = Depends(get_db), use
 
 
 def gm_console(request: Request, db: Session = Depends(get_db), user: PanelUser = Depends(require_level(1))):
+    cfg = all_config(db)
+    realm = selected_realm(request)
+    lang = request.session.get("lang") or cfg.get("language") or "de"
     try:
-        commands = normalize_db_commands(wowdb.gm_commands_from_db(all_config(db), selected_realm(request)), user.gm_level)
+        commands = normalize_db_commands(wowdb.gm_commands_from_db(cfg, realm), user.gm_level)
         source_error = None
     except Exception as exc:
         commands = allowed_commands(user.gm_level)
         source_error = str(exc)
+    try:
+        all_chars = wowdb.character_choices(cfg, realm, online_only=False)
+        online_chars = wowdb.character_choices(cfg, realm, online_only=True)
+        character_error = None
+    except Exception as exc:
+        all_chars, online_chars, character_error = [], [], str(exc)
+    try:
+        events = wowdb.game_events(cfg, realm)
+    except Exception:
+        events = []
+    actions = localized_actions(lang, user.gm_level) + event_actions(events, lang, user.gm_level)
     grouped = {}
     for command in commands:
         grouped.setdefault(command["category"], []).append(command)
-    return render(request, "gm.html", {"title": "GM-Befehle", "commands": commands, "grouped_commands": grouped, "source_error": source_error}, db)
+    tab_data = []
+    for tab_id, de, en in TABS:
+        if tab_id == "favorites":
+            items = [a for a in actions if a["id"] in FAVORITES]
+        elif tab_id == "raw":
+            items = []
+        else:
+            items = [a for a in actions if a["tab"] == tab_id]
+        tab_data.append({"id": tab_id, "label": en if lang == "en" else de, "actions": items})
+    flash = request.session.pop("flash", None)
+    return render(request, "gm.html", {
+        "title": "GM-Befehle",
+        "commands": commands,
+        "grouped_commands": grouped,
+        "source_error": source_error,
+        "character_error": character_error,
+        "all_chars": all_chars,
+        "online_chars": online_chars,
+        "tabs": tab_data,
+        "flash": flash,
+    }, db)
+
+
+async def gm_action(request: Request, db: Session = Depends(get_db), user: PanelUser = Depends(require_level(1))):
+    form_data = await request.form()
+    form = {key: value for key, value in form_data.items()}
+    csrf = form.get("csrf")
+    if not verify_csrf(request, csrf):
+        raise HTTPException(400, "CSRF")
+    action_id = form.get("action_id")
+    cfg = all_config(db)
+    realm = selected_realm(request)
+    lang = request.session.get("lang") or cfg.get("language") or "de"
+    try:
+        events = wowdb.game_events(cfg, realm)
+    except Exception:
+        events = []
+    actions = localized_actions(lang, user.gm_level) + event_actions(events, lang, user.gm_level)
+    action = next((item for item in actions if item["id"] == action_id), None)
+    if not action:
+        raise HTTPException(404, "Aktion nicht gefunden")
+    if action.get("character") == "online" and form.get("character"):
+        online_names = {row["name"] for row in wowdb.character_choices(cfg, realm, online_only=True)}
+        if form["character"] not in online_names:
+            raise HTTPException(400, "Dieser Befehl braucht einen online Charakter")
+    command = build_command(action, form)
+    result = execute_gm_command(db, cfg, realm, command)
+    record_command(db, user.id, realm, command, result)
+    log_action(db, user.id, "gm_action", realm, f"{action['label']}: {command} -> {result}", request.client.host if request.client else None)
+    request.session["flash"] = result
+    return RedirectResponse("/gm", status_code=303)
 
 
 def gm_run(request: Request, db: Session = Depends(get_db), user: PanelUser = Depends(require_level(1)), csrf: str = Form(...), command: str = Form(...), realm: str = Form("normal")):
@@ -237,7 +304,7 @@ def gm_run(request: Request, db: Session = Depends(get_db), user: PanelUser = De
     allowed = [c["template"].split()[0] for c in allowed_commands(user.gm_level)]
     if command.split()[0] not in allowed and user.gm_level < 3:
         raise HTTPException(403, "Befehl nicht erlaubt")
-    result = "SOAP/RA ist noch nicht in der Serverkonfiguration aktiviert. Befehl wurde protokolliert, aber nicht gesendet."
+    result = execute_gm_command(db, all_config(db), realm, command)
     record_command(db, user.id, realm, command, result)
     log_action(db, user.id, "gm_command", realm, command, request.client.host if request.client else None)
     return RedirectResponse("/gm", status_code=303)

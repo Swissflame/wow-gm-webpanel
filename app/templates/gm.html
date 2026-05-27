@@ -1,28 +1,71 @@
 {% extends "base.html" %}{% block content %}
-<section class="panel">
-  <h2>GM-Befehl ausführen</h2>
-  {% if source_error %}<p class="hint">Live-Kommandoliste konnte nicht aus der World-DB gelesen werden. Es wird die eingebaute AzerothCore-Liste angezeigt.</p>{% endif %}
-  <form method="post" action="/gm/run" class="grid-form">
-    <input type="hidden" name="csrf" value="{{ csrf }}">
-    <label>Realm<select name="realm"><option value="normal">Normal</option><option value="playerbot">Playerbot</option></select></label>
-    <label>Befehl<input name="command" placeholder="announce Wartung in 5 Minuten" required></label>
-    <button class="primary">Protokollieren / senden</button>
-  </form>
-</section>
-<section class="command-grid">
-{% for category, items in grouped_commands.items() %}
-  <details class="panel command-section" open>
-    <summary>{{ category }} <span>{{ items|length }}</span></summary>
-    <div class="command-list">
-      {% for c in items %}
-      <button type="button" class="command-card" data-command="{{ c.template }}">
-        <strong>.{{ c.name }}</strong>
-        <small>GM {{ c.level }}</small>
-        <em>{{ c.help }}</em>
-      </button>
+{% if flash %}
+<section class="notice"><strong>Ergebnis</strong><p>{{ flash }}</p></section>
+{% endif %}
+{% if source_error %}<section class="notice"><strong>Hinweis</strong><p>Die Rohbefehle konnten nicht aus der World-DB gelesen werden. Die Aktionskarten funktionieren mit der eingebauten AzerothCore-Liste.</p></section>{% endif %}
+{% if character_error %}<section class="notice"><strong>Charakterliste</strong><p>{{ character_error }}</p></section>{% endif %}
+
+<section class="gm-workbench">
+  <div class="gm-tabs" role="tablist">
+    {% for tab in tabs %}
+    <button type="button" class="gm-tab {% if loop.first %}active{% endif %}" data-tab="{{ tab.id }}">{{ tab.label }}</button>
+    {% endfor %}
+  </div>
+
+  {% for tab in tabs %}
+  <section class="gm-tab-panel {% if loop.first %}active{% endif %}" data-tab-panel="{{ tab.id }}">
+    {% if tab.id == "raw" %}
+    <section class="panel">
+      <h2>Expertenmodus</h2>
+      <form method="post" action="/gm/run" class="grid-form compact-form">
+        <input type="hidden" name="csrf" value="{{ csrf }}">
+        <input type="hidden" name="realm" value="{{ selected_realm }}">
+        <label>Befehl<input name="command" placeholder="announce Wartung in 5 Minuten" required></label>
+        <button class="primary">Senden</button>
+      </form>
+      <div class="raw-command-list">
+      {% for category, items in grouped_commands.items() %}
+        <details>
+          <summary>{{ category }} <span>{{ items|length }}</span></summary>
+          <div class="chips">{% for c in items %}<span data-command="{{ c.template }}">.{{ c.name }}</span>{% endfor %}</div>
+        </details>
       {% endfor %}
+      </div>
+    </section>
+    {% else %}
+    <div class="action-grid">
+      {% for action in tab.actions %}
+      <form method="post" action="/gm/action" class="action-card {% if action.character != 'none' %}needs-character{% endif %}">
+        <input type="hidden" name="csrf" value="{{ csrf }}">
+        <input type="hidden" name="action_id" value="{{ action.id }}">
+        <div class="action-head"><span>{{ action.icon }}</span><strong>{{ action.label }}</strong><small>GM {{ action.level }}</small></div>
+        <p>{{ action.description }}</p>
+        {% if action.character == "online" %}
+        <label>Online-Charakter
+          <select name="character" required>
+            {% for char in online_chars %}<option value="{{ char.name }}" class="online">{{ char.name }} · {{ char.level }}</option>{% endfor %}
+          </select>
+        </label>
+        {% elif action.character == "any" %}
+        <label>Charakter
+          <select name="character" required>
+            {% for char in all_chars %}<option value="{{ char.name }}" class="{{ 'online' if char.online else 'offline' }}">{{ '●' if char.online else '●' }} {{ char.name }} · {{ char.level }}</option>{% endfor %}
+          </select>
+        </label>
+        {% endif %}
+        {% for field in action.inputs or [] %}
+        <label>{{ field.label }}
+          <input name="{{ field.name }}" type="{{ field.type }}" value="{{ field.default or '' }}" {% if field.required %}required{% endif %}>
+        </label>
+        {% endfor %}
+        <code>.{{ action.command }}</code>
+        <button class="primary">Ausführen</button>
+      </form>
+      {% endfor %}
+      {% if not tab.actions %}<section class="panel"><p>Keine Aktionen in diesem Bereich.</p></section>{% endif %}
     </div>
-  </details>
-{% endfor %}
+    {% endif %}
+  </section>
+  {% endfor %}
 </section>
 {% endblock %}

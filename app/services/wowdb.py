@@ -107,6 +107,20 @@ def search_characters(cfg: dict, query: str = "", limit: int = 100, realm: str =
     return data[:limit]
 
 
+def character_choices(cfg: dict, realm: str = "normal", online_only: bool = False, limit: int = 500) -> list[dict]:
+    mysql = cfg["mysql"]
+    char_db = mysql["pb_characters_db"] if realm == "playerbot" else mysql["characters_db"]
+    where = "WHERE online = 1" if online_only else ""
+    sql = f"""
+    SELECT guid, name, level, race, class, online
+    FROM characters
+    {where}
+    ORDER BY online DESC, name
+    LIMIT :limit
+    """
+    return rows(mysql, char_db, sql, {"limit": limit})
+
+
 def auction_stats(cfg: dict, realm: str = "normal") -> dict:
     mysql = cfg["mysql"]
     char_db = mysql["pb_characters_db"] if realm == "playerbot" else mysql["characters_db"]
@@ -118,3 +132,15 @@ def gm_commands_from_db(cfg: dict, realm: str = "normal") -> list[dict]:
     mysql = cfg["mysql"]
     world_db = mysql["pb_world_db"] if realm == "playerbot" else mysql["world_db"]
     return rows(mysql, world_db, "SELECT name, security, help FROM command ORDER BY security, name")
+
+
+def game_events(cfg: dict, realm: str = "normal") -> list[dict]:
+    mysql = cfg["mysql"]
+    world_db = mysql["pb_world_db"] if realm == "playerbot" else mysql["world_db"]
+    sql = """
+    SELECT eventEntry AS id, description
+    FROM game_event
+    WHERE description IS NOT NULL AND description <> ''
+    ORDER BY description
+    """
+    return rows(mysql, world_db, sql)

@@ -1,5 +1,6 @@
 import socket
 import time
+from pathlib import PurePosixPath
 import paramiko
 
 
@@ -45,13 +46,35 @@ class SSHClient:
         return self.run(command, timeout=30)
 
     def service_action(self, pattern: str, action: str) -> tuple[int, str, str]:
+        path = PurePosixPath(pattern)
+        workdir = str(path.parent)
+        binary = path.name
+        log = f"/tmp/{binary}.wowpanel.log"
+        process_script = f"""
+find_pids() {{
+  for pid in $(pgrep -x {shell_quote(binary)} || true); do
+    if [ "$(readlink -f /proc/$pid/cwd 2>/dev/null)" = {shell_quote(workdir)} ]; then
+      echo "$pid"
+    fi
+  done
+}}
+"""
+        stop_script = """
+for pid in $(find_pids); do kill -TERM "$pid" || true; done
+for i in $(seq 1 60); do
+  [ -z "$(find_pids)" ] && break
+  sleep 1
+done
+for pid in $(find_pids); do kill -KILL "$pid" || true; done
+"""
+        start_script = f"cd {shell_quote(workdir)} && nohup ./{binary} >{shell_quote(log)} 2>&1 & echo started"
         script = {
-            "status": f"pgrep -af {shell_quote(pattern)} || true",
-            "stop": f"pkill -TERM -f {shell_quote(pattern)}",
-            "start": f"nohup {pattern} >/tmp/{pattern.split('/')[-1]}.log 2>&1 &",
-            "restart": f"pkill -TERM -f {shell_quote(pattern)} || true; sleep 3; nohup {pattern} >/tmp/{pattern.split('/')[-1]}.log 2>&1 &",
+            "status": process_script + "find_pids | xargs -r ps -fp || true",
+            "stop": process_script + stop_script + "echo stopped",
+            "start": start_script,
+            "restart": process_script + stop_script + start_script,
         }[action]
-        return self.run(script, timeout=20)
+        return self.run(script, timeout=90)
 
 
 def shell_quote(value: str) -> str:

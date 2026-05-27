@@ -30,15 +30,15 @@ GROUPS = [
 
 META = {
     "AuctionHouseBot.EnableSeller": ("Verkäufer aktiv", "Der AHBot stellt selbst Auktionen ein. Ohne diese Option füllt er das Auktionshaus nicht."),
-    "AuctionHouseBot.EnableBuyer": ("Käufer aktiv", "Der AHBot kauft Spielerauktionen nach den eingestellten Regeln auf."),
+    "AuctionHouseBot.EnableBuyer": ("Käufer aktiv", "Der AHBot kauft Spielerauktionen nach den eingestellten Regeln auf. Das ist der Hauptschalter, wenn Spieler ihre Auktionen schneller loswerden sollen."),
     "AuctionHouseBot.Account": ("Account-ID des AHBot", "Account-ID aus acore_auth.account, unter der der AHBot-Charakter geführt wird."),
     "AuctionHouseBot.GUID": ("Charakter-GUID des AHBot", "GUID des Charakters aus der characters-Tabelle, der als Auktionshaus-Bot verwendet wird."),
-    "AuctionHouseBot.ItemsPerCycle": ("Items pro Zyklus", "Anzahl Items, die der AHBot pro Arbeitszyklus einstellt oder entfernt. Höhere Werte wirken schneller, erzeugen aber mehr Last."),
+    "AuctionHouseBot.ItemsPerCycle": ("Items pro Zyklus", "Anzahl Items, die der AHBot pro Arbeitszyklus prüft, kauft, einstellt oder entfernt. Höhere Werte wirken schneller, erzeugen aber mehr Last."),
     "AuctionHouseBot.UseBuyPriceForSeller": ("Verkäufer nutzt Kaufpreis", "Wenn aktiv, nutzt der Verkäufer den BuyPrice statt SellPrice als Preisbasis."),
-    "AuctionHouseBot.UseBuyPriceForBuyer": ("Käufer nutzt Kaufpreis", "Wenn aktiv, nutzt der Käufer den BuyPrice statt SellPrice als Preisbasis."),
+    "AuctionHouseBot.UseBuyPriceForBuyer": ("Käufer nutzt Kaufpreis", "Wenn aktiv, bewertet der Käufer Auktionen nach dem höheren NPC-Kaufpreis. Dadurch kauft er großzügiger und schneller. Deaktiviert bleibt er vorsichtiger und nutzt den niedrigeren Verkaufspreis als Basis."),
     "AuctionHouseBot.UseMarketPriceForSeller": ("Marktpreis nutzen", "Wenn aktiv, orientiert sich der Verkäufer am beobachteten Marktpreis."),
-    "AuctionHouseBot.MarketResetThreshold": ("Marktpreis-Schwelle", "Anzahl gleicher Auktionen, ab der der Marktpreis als stabil gilt. Niedrig reagiert schnell, hoch glättet Preisschwankungen."),
-    "AuctionHouseBot.ConsiderOnlyBotAuctions": ("Nur Bot-Auktionen zählen", "Spielerauktionen werden bei der Bestandssteuerung ignoriert. Nützlich, wenn Spielerhandel den Bot nicht ausbremsen soll."),
+    "AuctionHouseBot.MarketResetThreshold": ("Marktpreis-Schwelle", "Anzahl gleicher Auktionen, ab der der Marktpreis als stabil gilt. Niedrig reagiert schneller auf neue Preise, hoch glättet Preisschwankungen stärker."),
+    "AuctionHouseBot.ConsiderOnlyBotAuctions": ("Nur Bot-Auktionen zählen", "Spielerauktionen werden bei der Bestandssteuerung ignoriert. Das hält den Bot aktiv, auch wenn viele Spielerauktionen vorhanden sind."),
     "AuctionHouseBot.DuplicatesCount": ("Maximale doppelte Stapel", "Begrenzt, wie viele gleiche Stapel der Bot gleichzeitig anbietet. 0 bedeutet keine Begrenzung."),
     "AuctionHouseBot.DivisibleStacks": ("Teilbare Stapelgrößen", "Verkauft Stapel in festen Größen passend zur maximalen Stapelgröße, statt zufällig."),
     "AuctionHouseBot.ElapsingTimeClass": ("Auktionsdauer-Klasse", "0 = lang, 1 = mittel, 2 = kurz. Bestimmt, wie lange Bot-Auktionen laufen."),
@@ -215,19 +215,44 @@ def schedule_realm_restart(cfg: dict, realm: str, delay: int) -> str:
     base = cfg["server"]["playerbot_path"] if realm == "playerbot" else cfg["server"]["normal_path"]
     workdir = f"{base}/bin"
     script = f"/tmp/wowpanel_restart_{realm}.sh"
+    log = f"/tmp/wowpanel_restart_{realm}.log"
     content = f"""#!/usr/bin/env bash
+set -u
+log={shell_quote(log)}
+exec >>"$log" 2>&1
+echo "[$(date -Is)] Restart for {realm} scheduled after {int(delay)} seconds"
 sleep {int(delay)}
+echo "[$(date -Is)] Stopping worldserver in {workdir}"
 for pid in $(pgrep -x worldserver || true); do
   if [ "$(readlink -f /proc/$pid/cwd 2>/dev/null)" = {shell_quote(workdir)} ]; then
+    echo "[$(date -Is)] TERM $pid"
     kill -TERM "$pid" || true
   fi
 done
-sleep 5
+for i in $(seq 1 60); do
+  remaining=""
+  for pid in $(pgrep -x worldserver || true); do
+    if [ "$(readlink -f /proc/$pid/cwd 2>/dev/null)" = {shell_quote(workdir)} ]; then
+      remaining="$remaining $pid"
+    fi
+  done
+  [ -z "$remaining" ] && break
+  sleep 1
+done
+for pid in $(pgrep -x worldserver || true); do
+  if [ "$(readlink -f /proc/$pid/cwd 2>/dev/null)" = {shell_quote(workdir)} ]; then
+    echo "[$(date -Is)] KILL $pid after timeout"
+    kill -KILL "$pid" || true
+  fi
+done
+sleep 2
 cd {shell_quote(workdir)}
+echo "[$(date -Is)] Starting ./worldserver"
 nohup ./worldserver >/tmp/worldserver_{realm}.wowpanel.log 2>&1 &
+echo "[$(date -Is)] Started with pid $!"
 """
     marker = "WOWPANEL_RESTART"
-    command = f"cat > {shell_quote(script)} <<'{marker}'\n{content}{marker}\nchmod +x {shell_quote(script)}\nnohup bash {shell_quote(script)} >/tmp/wowpanel_restart_{realm}.log 2>&1 &"
+    command = f"cat > {shell_quote(script)} <<'{marker}'\n{content}{marker}\nchmod +x {shell_quote(script)}\n: > {shell_quote(log)}\nnohup bash {shell_quote(script)} >/dev/null 2>&1 &"
     code, out, err = SSHClient(cfg["server"]).run(command, timeout=10)
     if code != 0:
         raise RuntimeError(err or out or "Neustart konnte nicht geplant werden.")

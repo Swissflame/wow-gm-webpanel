@@ -14,6 +14,21 @@
     <div class="card"><span>Max. Sofortkauf</span><strong>{{ stats.get('max_buyout','?') }}</strong></div>
   </section>
 
+  <section class="panel ahbot-guide">
+    <div>
+      <h2>Kauf-Tuning: Spielerauktionen schneller verkaufen</h2>
+      <p>Diese Regler sind entscheidend, wenn der AHBot Spielerauktionen schneller und zu brauchbaren Preisen kaufen soll.</p>
+    </div>
+    <ol>
+      <li><strong>Käufer aktiv</strong> auf <em>Ja</em>: sonst kauft der Bot gar keine Spielerauktionen.</li>
+      <li><strong>Items pro Zyklus</strong> erhöhen: 200 ist ruhig, 400 bis 800 reagiert deutlich schneller. Bei hoher Serverlast wieder senken.</li>
+      <li><strong>Käufer nutzt Kaufpreis</strong> auf <em>Ja</em>: der Bot bewertet großzügiger und kauft mehr. Auf <em>Nein</em> bleibt er sparsamer.</li>
+      <li><strong>Marktpreis-Schwelle</strong> eher niedrig halten: 10 bis 15 reagiert schneller, 25 ist träger aber stabiler.</li>
+      <li><strong>Nur Bot-Auktionen zählen</strong> auf <em>Ja</em>, wenn Spielerauktionen den Bot nicht bremsen sollen.</li>
+    </ol>
+    <p class="hint">Empfohlener Startwert für deinen Server: Käufer aktiv = Ja, Items pro Zyklus = 500, Käufer nutzt Kaufpreis = Ja, Marktpreis-Schwelle = 12, Nur Bot-Auktionen zählen = Ja. Danach beobachten, ob Goldfluss und Auktionshaus natürlich wirken.</p>
+  </section>
+
   <form method="post" action="/ahbot/save" class="ahbot-form">
     <input type="hidden" name="csrf" value="{{ csrf }}">
     <section class="panel ahbot-summary">

@@ -1,0 +1,78 @@
+{% extends "base.html" %}{% block content %}
+{% if flash %}<section class="notice"><strong>Account</strong><p>{{ flash }}</p></section>{% endif %}
+{% if error %}<section class="notice"><strong>{{ _("Connection problem") }}</strong><p>{{ error }}</p></section>{% endif %}
+
+{% if account %}
+<section class="account-detail">
+  <section class="panel">
+    <h2>{{ account.username }} <small>ID {{ account.id }}</small></h2>
+    <div class="detail-grid">
+      <div><span>E-Mail</span><strong>{{ account.email or "-" }}</strong></div>
+      <div><span>Registriert</span><strong>{{ account.joindate or "-" }}</strong></div>
+      <div><span>Letzter Login</span><strong>{{ account.last_login or "-" }}</strong></div>
+      <div><span>Letzte IP</span><strong>{{ account.last_ip or "-" }}</strong></div>
+      <div><span>Fehlversuche</span><strong>{{ account.failed_logins or 0 }}</strong></div>
+      <div><span>Online</span><strong>{{ "ja" if account.online else "nein" }}</strong></div>
+      <div><span>Gesperrt</span><strong>{{ "ja" if account.locked else "nein" }}</strong></div>
+      <div><span>GM-Level</span><strong>{{ account.gm_level }}</strong></div>
+    </div>
+  </section>
+
+  {% if user.gm_level >= 3 %}
+  <form method="post" action="/accounts/{{ account.id }}/save" class="panel account-edit">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <h2>Account bearbeiten</h2>
+    <label>E-Mail<input name="email" type="email" value="{{ account.email or '' }}"></label>
+    <label>Neues Passwort<input name="password" type="password" placeholder="leer lassen = unverändert"></label>
+    <label>Status
+      <select name="locked">
+        <option value="0" {% if not account.locked %}selected{% endif %}>aktiv</option>
+        <option value="1" {% if account.locked %}selected{% endif %}>gesperrt</option>
+      </select>
+    </label>
+    <label>Expansion
+      <select name="expansion">
+        <option value="0" {% if account.expansion == 0 %}selected{% endif %}>Classic</option>
+        <option value="1" {% if account.expansion == 1 %}selected{% endif %}>The Burning Crusade</option>
+        <option value="2" {% if account.expansion == 2 %}selected{% endif %}>Wrath of the Lich King</option>
+      </select>
+    </label>
+    <label>GM-Level
+      <select name="gm_level">
+        {% for level in [0,1,2,3] %}<option value="{{ level }}" {% if account.gm_level == level %}selected{% endif %}>{{ level }}</option>{% endfor %}
+      </select>
+    </label>
+    <button class="primary">Speichern</button>
+  </form>
+  {% endif %}
+
+  <section class="panel">
+    <h2>GM-Rechte</h2>
+    <table class="inner-table"><tr><th>RealmID</th><th>GM-Level</th></tr>
+      {% for row in account.access %}<tr><td>{{ row.RealmID }}</td><td>{{ row.gmlevel }}</td></tr>{% endfor %}
+    </table>
+    {% if not account.access %}<p>Keine GM-Rechte gesetzt.</p>{% endif %}
+  </section>
+
+  <section class="panel">
+    <h2>Charaktere Normal-Realm</h2>
+    {% set chars = account.characters_normal %}
+    {% include "partials/account_characters.html" %}
+  </section>
+
+  <section class="panel">
+    <h2>Charaktere Playerbot-Realm</h2>
+    {% set chars = account.characters_playerbot %}
+    {% include "partials/account_characters.html" %}
+  </section>
+
+  <section class="panel">
+    <h2>Banns</h2>
+    <table class="inner-table"><tr><th>Von</th><th>Bis</th><th>GM</th><th>Grund</th><th>Aktiv</th></tr>
+      {% for ban in account.bans %}<tr><td>{{ ban.bandate }}</td><td>{{ ban.unbandate }}</td><td>{{ ban.bannedby }}</td><td>{{ ban.banreason }}</td><td>{{ "ja" if ban.active else "nein" }}</td></tr>{% endfor %}
+    </table>
+    {% if not account.bans %}<p>Keine Banns gefunden.</p>{% endif %}
+  </section>
+</section>
+{% endif %}
+{% endblock %}

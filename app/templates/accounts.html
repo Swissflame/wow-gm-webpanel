@@ -1,7 +1,56 @@
 {% extends "base.html" %}{% block content %}
-<form class="search"><input name="q" value="{{ q }}" placeholder="Account suchen"><button>Suchen</button></form>
+{% if flash %}<section class="notice"><strong>Account</strong><p>{{ flash }}</p></section>{% endif %}
 {% if error %}<section class="notice"><strong>{{ _("Connection problem") }}</strong><p>{{ error }}</p></section>{% endif %}
-<table><tr><th>ID</th><th>Account</th><th>E-Mail</th><th>GM</th><th>Online</th><th>Gesperrt</th><th>Letzter Login</th><th>IP</th></tr>
-{% for a in items %}<tr><td>{{ a.id }}</td><td>{{ a.username }}</td><td>{{ a.email }}</td><td>{{ a.gm_level }}</td><td>{{ a.online }}</td><td>{{ a.locked }}</td><td>{{ a.last_login }}</td><td>{{ a.last_ip }}</td></tr>{% endfor %}
+
+<section class="account-toolbar">
+  <form class="search">
+    <input name="q" value="{{ q }}" placeholder="Account suchen">
+    <label class="checkline"><input type="checkbox" name="include_bots" value="1" {% if include_bots %}checked{% endif %}> Bots/Systemaccounts anzeigen</label>
+    <button>Suchen</button>
+  </form>
+
+  {% if user.gm_level >= 3 %}
+  <form method="post" action="/accounts/create" class="panel account-create">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <h2>Neuen Account anlegen</h2>
+    <label>Accountname<input name="username" required maxlength="32"></label>
+    <label>Passwort<input name="password" type="password" required minlength="6"></label>
+    <label>E-Mail<input name="email" type="email"></label>
+    <label>Expansion
+      <select name="expansion">
+        <option value="0">Classic</option>
+        <option value="1">The Burning Crusade</option>
+        <option value="2" selected>Wrath of the Lich King</option>
+      </select>
+    </label>
+    <label>GM-Level
+      <select name="gm_level">
+        <option value="0">0 - Spieler</option>
+        <option value="1">1 - GM</option>
+        <option value="2">2 - Senior GM</option>
+        <option value="3">3 - Admin</option>
+      </select>
+    </label>
+    <button class="primary">Account erstellen</button>
+  </form>
+  {% endif %}
+</section>
+
+<table>
+  <tr><th>ID</th><th>Account</th><th>E-Mail</th><th>GM</th><th>Chars</th><th>Online</th><th>Gesperrt</th><th>Letzter Login</th><th>IP</th></tr>
+  {% for a in items %}
+  <tr>
+    <td>{{ a.id }}</td>
+    <td><a href="/accounts/{{ a.id }}" target="_blank" rel="noopener">{{ a.username }}</a></td>
+    <td>{{ a.email }}</td>
+    <td>{{ a.gm_level }}</td>
+    <td>Normal {{ a.normal_chars }} · Playerbot {{ a.playerbot_chars }}</td>
+    <td>{{ "ja" if a.online else "nein" }}</td>
+    <td>{{ "ja" if a.locked else "nein" }}</td>
+    <td>{{ a.last_login or "-" }}</td>
+    <td>{{ a.last_ip or "-" }}</td>
+  </tr>
+  {% endfor %}
 </table>
+{% if not items and not error %}<section class="panel"><p>Keine Accounts gefunden.</p></section>{% endif %}
 {% endblock %}

@@ -1,6 +1,10 @@
 from contextlib import contextmanager
+from datetime import datetime
+import os
 from sqlalchemy import create_engine, text
 from sqlalchemy.engine import Engine
+
+from ..security import azeroth_sha_pass_hash, azeroth_srp6_verifier
 
 
 def make_url(cfg: dict, database: str) -> str:
@@ -77,18 +81,145 @@ def online_players(cfg: dict, realm: str = "normal") -> list[dict]:
     return data
 
 
-def search_accounts(cfg: dict, query: str = "", limit: int = 100) -> list[dict]:
+BOT_ACCOUNT_FILTER = "a.username NOT REGEXP '^(RNDBOT|BOT|PLAYERBOT|AHBOT|ACORE_WEBPANEL)'"
+
+
+def search_accounts(cfg: dict, query: str = "", limit: int = 500, include_bots: bool = False) -> list[dict]:
     mysql = cfg["mysql"]
+    bot_clause = "1=1" if include_bots else BOT_ACCOUNT_FILTER
     sql = """
     SELECT a.id, a.username, a.email, a.last_ip, a.last_login, a.locked, a.online,
+           a.expansion,
+           COALESCE(MAX(aa.gmlevel),0) AS gm_level,
+           COALESCE(nc.char_count, 0) AS normal_chars,
+           COALESCE(pc.char_count, 0) AS playerbot_chars
+    FROM account a
+    LEFT JOIN account_access aa ON aa.id = a.id
+    LEFT JOIN (SELECT account, COUNT(*) char_count FROM {characters_db}.characters GROUP BY account) nc ON nc.account = a.id
+    LEFT JOIN (SELECT account, COUNT(*) char_count FROM {pb_characters_db}.characters GROUP BY account) pc ON pc.account = a.id
+    WHERE ({bot_clause}) AND (:q = '' OR a.username LIKE :likeq OR a.email LIKE :likeq)
+    GROUP BY a.id
+    ORDER BY (COALESCE(nc.char_count,0) + COALESCE(pc.char_count,0)) DESC, a.last_login DESC, a.id DESC
+    LIMIT :limit
+    """.format(characters_db=mysql["characters_db"], pb_characters_db=mysql["pb_characters_db"], bot_clause=bot_clause)
+    return rows(mysql, mysql["auth_db"], sql, {"q": query, "likeq": f"%{query}%", "limit": limit})
+
+
+def account_detail(cfg: dict, account_id: int) -> dict | None:
+    mysql = cfg["mysql"]
+    sql = """
+    SELECT a.id, a.username, a.email, a.reg_mail, a.joindate, a.last_ip, a.last_attempt_ip,
+           a.last_login, a.locked, a.online, a.expansion, a.failed_logins, a.mutetime,
+           a.mutereason, a.muteby, a.locale, a.os,
            COALESCE(MAX(aa.gmlevel),0) AS gm_level
     FROM account a
     LEFT JOIN account_access aa ON aa.id = a.id
-    WHERE (:q = '' OR a.username LIKE :likeq OR a.email LIKE :likeq)
+    WHERE a.id = :id
     GROUP BY a.id
-    ORDER BY a.id DESC LIMIT :limit
+    LIMIT 1
     """
-    return rows(mysql, mysql["auth_db"], sql, {"q": query, "likeq": f"%{query}%", "limit": limit})
+    data = rows(mysql, mysql["auth_db"], sql, {"id": account_id})
+    if not data:
+        return None
+    account = data[0]
+    account["access"] = rows(mysql, mysql["auth_db"], "SELECT id, gmlevel, RealmID FROM account_access WHERE id=:id ORDER BY RealmID", {"id": account_id})
+    account["bans"] = rows(mysql, mysql["auth_db"], "SELECT bandate, unbandate, bannedby, banreason, active FROM account_banned WHERE id=:id ORDER BY bandate DESC LIMIT 20", {"id": account_id})
+    account["characters_normal"] = account_characters(mysql, mysql["characters_db"], account_id, "Normal")
+    account["characters_playerbot"] = account_characters(mysql, mysql["pb_characters_db"], account_id, "Playerbot")
+    return account
+
+
+def account_characters(mysql: dict, char_db: str, account_id: int, realm: str) -> list[dict]:
+    sql = """
+    SELECT guid, name, level, race, class, gender, money, online, zone, map,
+           ROUND(position_x,2) AS x, ROUND(position_y,2) AS y, ROUND(position_z,2) AS z
+    FROM characters
+    WHERE account = :id
+    ORDER BY online DESC, level DESC, name
+    """
+    data = rows(mysql, char_db, sql, {"id": account_id})
+    for row in data:
+        row["realm"] = realm
+    return data
+
+
+def account_table_columns(mysql_cfg: dict, auth_db: str, table: str = "account") -> set[str]:
+    return {row["Field"] for row in rows(mysql_cfg, auth_db, f"DESCRIBE {table}")}
+
+
+def create_account(cfg: dict, username: str, password: str, email: str = "", expansion: int = 2, gm_level_value: int = 0):
+    mysql = cfg["mysql"]
+    auth_db = mysql["auth_db"]
+    username = username.strip().upper()
+    if not username or len(username) > 32:
+        raise ValueError("Accountname muss 1 bis 32 Zeichen haben.")
+    if len(password) < 6:
+        raise ValueError("Passwort muss mindestens 6 Zeichen haben.")
+    if account_by_username(mysql, auth_db, username):
+        raise ValueError("Dieser Account existiert bereits.")
+    columns = account_table_columns(mysql, auth_db)
+    salt = os.urandom(32)
+    values = {
+        "username": username,
+        "email": email.strip(),
+        "reg_mail": email.strip(),
+        "joindate": datetime.utcnow(),
+        "last_ip": "127.0.0.1",
+        "last_attempt_ip": "127.0.0.1",
+        "locked": 0,
+        "online": 0,
+        "expansion": int(expansion),
+        "failed_logins": 0,
+        "locale": 0,
+        "os": "",
+        "salt": salt,
+        "verifier": azeroth_srp6_verifier(username, password, salt),
+        "sha_pass_hash": azeroth_sha_pass_hash(username, password),
+    }
+    insert_values = {key: value for key, value in values.items() if key in columns}
+    keys = ", ".join(insert_values.keys())
+    bind_keys = ", ".join(f":{key}" for key in insert_values)
+    with engine_for(mysql, auth_db).begin() as conn:
+        result = conn.execute(text(f"INSERT INTO account ({keys}) VALUES ({bind_keys})"), insert_values)
+        account_id = int(result.lastrowid)
+        _set_account_access(conn, account_id, int(gm_level_value))
+    return account_id
+
+
+def update_account(cfg: dict, account_id: int, email: str, locked: int, expansion: int, gm_level_value: int, password: str = ""):
+    mysql = cfg["mysql"]
+    auth_db = mysql["auth_db"]
+    columns = account_table_columns(mysql, auth_db)
+    updates = {
+        "email": email.strip(),
+        "reg_mail": email.strip(),
+        "locked": int(locked),
+        "expansion": int(expansion),
+    }
+    update_values = {key: value for key, value in updates.items() if key in columns}
+    update_values["id"] = int(account_id)
+    password = (password or "").strip()
+    if password:
+        account = account_detail(cfg, account_id)
+        if not account:
+            raise ValueError("Account nicht gefunden.")
+        salt = os.urandom(32)
+        if "salt" in columns:
+            update_values["salt"] = salt
+        if "verifier" in columns:
+            update_values["verifier"] = azeroth_srp6_verifier(account["username"], password, salt)
+        if "sha_pass_hash" in columns:
+            update_values["sha_pass_hash"] = azeroth_sha_pass_hash(account["username"], password)
+    assignments = ", ".join(f"{key}=:{key}" for key in update_values if key != "id")
+    with engine_for(mysql, auth_db).begin() as conn:
+        conn.execute(text(f"UPDATE account SET {assignments} WHERE id=:id"), update_values)
+        _set_account_access(conn, int(account_id), int(gm_level_value))
+
+
+def _set_account_access(conn, account_id: int, gm_level_value: int):
+    conn.execute(text("DELETE FROM account_access WHERE id=:id AND RealmID=-1"), {"id": account_id})
+    if gm_level_value > 0:
+        conn.execute(text("INSERT INTO account_access (id, gmlevel, RealmID) VALUES (:id, :gm, -1)"), {"id": account_id, "gm": gm_level_value})
 
 
 def search_characters(cfg: dict, query: str = "", limit: int = 100, realm: str = "normal") -> list[dict]:

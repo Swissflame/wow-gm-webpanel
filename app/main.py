@@ -48,6 +48,9 @@ def create_app() -> FastAPI:
     app.add_api_route("/dashboard", dashboard, methods=["GET"], response_class=HTMLResponse)
     app.add_api_route("/online", online, methods=["GET"], response_class=HTMLResponse)
     app.add_api_route("/accounts", accounts, methods=["GET"], response_class=HTMLResponse)
+    app.add_api_route("/accounts/create", account_create, methods=["POST"])
+    app.add_api_route("/accounts/{account_id}", account_detail, methods=["GET"], response_class=HTMLResponse)
+    app.add_api_route("/accounts/{account_id}/save", account_save, methods=["POST"])
     app.add_api_route("/characters", characters, methods=["GET"], response_class=HTMLResponse)
     app.add_api_route("/gm", gm_console, methods=["GET"], response_class=HTMLResponse)
     app.add_api_route("/gm/run", gm_run, methods=["POST"])
@@ -205,12 +208,52 @@ def online(request: Request, db: Session = Depends(get_db), user: PanelUser = De
     return render(request, "online.html", {"title": "Online-Spieler", "players": players, "error": error}, db)
 
 
-def accounts(request: Request, q: str = "", db: Session = Depends(get_db), user: PanelUser = Depends(require_level(1))):
+def accounts(request: Request, q: str = "", include_bots: int = 0, db: Session = Depends(get_db), user: PanelUser = Depends(require_level(1))):
     try:
-        items, error = wowdb.search_accounts(all_config(db), q), None
+        items, error = wowdb.search_accounts(all_config(db), q, include_bots=bool(include_bots)), None
     except Exception as exc:
         items, error = [], str(exc)
-    return render(request, "accounts.html", {"title": "Accounts", "items": items, "q": q, "error": error}, db)
+    flash = request.session.pop("account_error", None)
+    return render(request, "accounts.html", {"title": "Accounts", "items": items, "q": q, "include_bots": include_bots, "error": error, "flash": flash}, db)
+
+
+def account_detail(request: Request, account_id: int, db: Session = Depends(get_db), user: PanelUser = Depends(require_level(1))):
+    try:
+        account, error = wowdb.account_detail(all_config(db), account_id), None
+    except Exception as exc:
+        account, error = None, str(exc)
+    if not account and not error:
+        raise HTTPException(404, "Account nicht gefunden")
+    flash = request.session.pop("account_flash", None)
+    return render(request, "account_detail.html", {"title": "Account", "account": account, "error": error, "flash": flash}, db)
+
+
+def account_create(request: Request, db: Session = Depends(get_db), user: PanelUser = Depends(require_level(3)),
+                   csrf: str = Form(...), username: str = Form(...), password: str = Form(...), email: str = Form(""),
+                   expansion: int = Form(2), gm_level: int = Form(0)):
+    if not verify_csrf(request, csrf):
+        raise HTTPException(400, "CSRF")
+    try:
+        account_id = wowdb.create_account(all_config(db), username, password, email, expansion, gm_level)
+        log_action(db, user.id, "account_create", str(account_id), username, request.client.host if request.client else None)
+        return RedirectResponse(f"/accounts/{account_id}", status_code=303)
+    except Exception as exc:
+        request.session["account_error"] = str(exc)
+        return RedirectResponse("/accounts", status_code=303)
+
+
+def account_save(request: Request, account_id: int, db: Session = Depends(get_db), user: PanelUser = Depends(require_level(3)),
+                 csrf: str = Form(...), email: str = Form(""), locked: int = Form(0), expansion: int = Form(2),
+                 gm_level: int = Form(0), password: str = Form("")):
+    if not verify_csrf(request, csrf):
+        raise HTTPException(400, "CSRF")
+    try:
+        wowdb.update_account(all_config(db), account_id, email, locked, expansion, gm_level, password)
+        log_action(db, user.id, "account_update", str(account_id), f"locked={locked}, expansion={expansion}, gm={gm_level}", request.client.host if request.client else None)
+        request.session["account_flash"] = "Account gespeichert."
+    except Exception as exc:
+        request.session["account_flash"] = f"Fehler: {exc}"
+    return RedirectResponse(f"/accounts/{account_id}", status_code=303)
 
 
 def characters(request: Request, q: str = "", db: Session = Depends(get_db), user: PanelUser = Depends(require_level(1))):

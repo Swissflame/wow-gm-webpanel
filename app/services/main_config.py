@@ -1,3 +1,4 @@
+import re
 from dataclasses import asdict
 
 from .config_scanner import ConfigOption, scan_content, update_value
@@ -7,11 +8,11 @@ from .ssh_service import SSHClient, shell_quote
 MAIN_FILES = ("authserver.conf", "worldserver.conf")
 
 GROUP_ORDER = [
-    ("uebersicht", "Uebersicht & wichtigste Regler"),
+    ("uebersicht", "Übersicht & wichtigste Regler"),
     ("auth_login", "Authserver: Login & Sicherheit"),
     ("datenbanken", "Datenbanken & Updates"),
     ("remote", "Remotezugriff: SOAP, RA & Konsole"),
-    ("leistung", "Leistung, Netzwerk & Stabilitaet"),
+    ("leistung", "Leistung, Netzwerk & Stabilität"),
     ("logs", "Logs, Monitoring & Diagnose"),
     ("realm", "Realm, Client & Session"),
     ("gm", "GM-System, Tickets & Support"),
@@ -37,6 +38,86 @@ IMPORTANT_KEYS = {
     "DataDir", "LogsDir", "ActivateWeather", "ChangeWeatherInterval",
     "Visibility.Distance.Continents", "MoveMaps.Enable", "vmap.enableLOS",
     "vmap.enableHeight", "Warden.Enabled", "AutoBroadcast.On",
+}
+
+FORCE_NUMBER_KEYS = {
+    "UseProcessors", "WrongPass.MaxCount",
+    "LoginDatabase.WorkerThreads", "LoginDatabase.SynchThreads", "WorldDatabase.WorkerThreads",
+    "WorldDatabase.SynchThreads", "CharacterDatabase.WorkerThreads", "CharacterDatabase.SynchThreads",
+    "Updates.EnableDatabases", "RealmID", "Network.Threads", "ThreadPool", "Compression",
+    "Metric.Interval", "Metric.OverallStatusInterval", "ClientCacheVersion",
+    "DisconnectToleranceInterval", "MaxCoreStuckTime",
+    "Warden.NumLuaChecks", "Warden.NumMemChecks", "Warden.NumOtherChecks",
+    "AutoBroadcast.MinDisableLevel",
+    "LevelReq.Mail", "LevelReq.Auction", "AuctionHouse.WorkerThreads", "Rate.Auction.Time",
+    "Rate.Auction.Deposit", "Rate.Auction.Cut", "Respawn.DynamicRateCreature",
+    "Respawn.DynamicRateGameObject", "Channel.ModerationGMLevel", "ChatStrictLinkChecking.Severity",
+    "ChatFlood.MessageDelay", "ChatFlood.AddonMessageDelay",
+    "ChatLevelReq.Channel", "ChatLevelReq.Whisper", "ChatLevelReq.Say", "PartyLevelReq",
+    "ChangeFaction.MaxMoney", "LevelReq.Ticket", "Command.LookupMaxResults",
+    "Die.Command.Mode", "GM.LoginState", "GM.Visible", "GM.Chat", "GM.WhisperingTo",
+    "GM.InGMList.Level", "GM.InWhoList.Level", "GM.StartLevel", "GM.TicketSystem.ChanceOfGMSurvey",
+    "StrictPlayerNames", "StrictPetNames", "CharacterCreating.Disabled",
+    "CharacterCreating.Disabled.RaceMask", "CharacterCreating.Disabled.ClassMask",
+    "SkipCinematics", "CleanCharacterDB", "PersistentCharacterCleanFlags", "CharDelete.Method",
+    "CharDelete.MinLevel", "CharDelete.KeepDays", "DungeonFinder.OptionsMask",
+    "DungeonAccessRequirements.PrintMode", "DungeonAccessRequirements.OptionalStringID",
+    "Wintergrasp.PlayerMin", "Battleground.ReportAFK",
+    "Battleground.Warsong.Flags", "Arena.QueueAnnouncer.Detail", "PvPToken.MapAllowType",
+}
+
+FORCE_ENUM_KEYS = {
+    "ProcessPriority", "WrongPass.BanType", "RealmZone", "PreventAFKLogout",
+    "PacketSpoof.BanMode", "Warden.ClientCheckFailAction", "AutoBroadcast.Center",
+    "Visibility.GroupMode", "StrictChannelNames", "ChatStrictLinkChecking.Severity",
+    "ChatStrictLinkChecking.Kick", "Battleground.InvitationType",
+}
+
+FORCE_BOOLEAN_KEYS = {
+    "EnableProxyProtocol", "WrongPass.Logging", "StrictVersionCheck", "AllowLoggingIPAddressesInDatabase",
+    "EnableTOTP", "Updates.AutoSetup", "Updates.Redundancy", "Updates.ArchivedRedundancy",
+    "Updates.AllowRehash", "Network.UseSocketActivation", "Console.Enable", "BeepAtStart",
+    "FlashAtStart", "Network.TcpNodelay", "Network.EnableProxyProtocol", "Ra.Enable", "SOAP.Enabled",
+    "Allow.IP.Based.Action.Logging", "LogSpamReports", "ChatLog.Enable", "Log.Async.Enable",
+    "Metric.Enable", "Metric.InfluxDB.v2", "World.RealmAvailability", "CloseIdleConnections",
+    "EnableLoginAfterDC", "SaveRespawnTimeImmediately", "Server.LoginInfo", "ShowKickInWorld",
+    "ShowMuteInWorld", "ShowBanInWorld", "Warden.Enabled", "AutoBroadcast.On",
+    "Visibility.ObjectSparkles", "Visibility.ObjectQuestMarkers", "MoveMaps.Enable",
+    "vmap.enableLOS", "vmap.enableHeight", "vmap.petLOS", "vmap.BlizzlikePvPLOS",
+    "vmap.BlizzlikeLOSInOpenWorld", "vmap.enableIndoorCheck", "DetectPosCollision",
+    "CheckGameObjectLoS", "PreloadAllNonInstancedMapGrids", "DontCacheRandomMovementPaths",
+    "ActivateWeather", "AllowTickets", "AllowPlayerCommands", "GM.AllowInvite", "GM.AllowFriend",
+    "GM.LowerSecurity", "DisableWaterBreath", "AllFlightPaths", "InstantFlightPaths",
+    "AlwaysMaxSkillForLevel", "AlwaysMaxWeaponSkill", "PlayerStart.AllReputation",
+    "PlayerStart.CustomSpells", "PlayerStart.MapsExplored", "InstantLogout",
+    "PlayerSave.Stats.SaveOnlyOnLogout", "ValidateSkillLearnedBySpells", "DeclinedNames",
+    "StrictNames.Reserved", "StrictNames.Profanity", "EnablePlayerSettings", "EnableLowLevelRegenBoost",
+    "SpellQueue.Enabled", "SkillChance.MiningSteps", "SkillChance.SkinningSteps",
+    "OffhandCheckAtSpellUnlearn", "Stats.Limits.Enable", "PvPToken.Enable", "Death.Bones.World",
+    "Death.Bones.BattlegroundOrArena", "ItemDelete.Vendor", "DBC.EnforceItemAttributes",
+    "Quests.EnableQuestTracker", "QuestPOI.Enabled", "Quests.IgnoreRaid", "Quests.IgnoreAutoAccept",
+    "Quests.IgnoreAutoComplete", "Creature.RepositionAgainstNpcs", "LeaveGroupOnLogout.Enabled",
+    "Instance.GMSummonPlayer", "Instance.IgnoreLevel", "Instance.IgnoreRaid",
+    "Instance.SharedNormalHeroicId", "JoinBGAndLFG.Enable", "LFG.MailItemOnFullInventory",
+    "LFG.Location.All", "DungeonFinder.CastDeserter", "DungeonFinder.AllowCompleted",
+    "DungeonAccessRequirements.PortalAvgIlevelCheck", "Wintergrasp.Enable",
+    "Wintergrasp.KickVoAPlayers", "Battleground.CastDeserter", "Battleground.QueueAnnouncer.Enable",
+    "Battleground.QueueAnnouncer.Timed", "Battleground.GiveXPForKills",
+    "Battleground.StoreStatistics.Enable", "Battleground.TrackDeserters.Enable",
+    "Battleground.DisableQuestShareInBG", "Battleground.DisableReadyCheckInBG",
+    "Arena.AutoDistributePoints", "Arena.QueueAnnouncer.Enable", "Guild.AllowMultipleGuildMaster",
+    "IsContinentTransport.Enabled", "IsPreloadedContinentTransport.Enabled", "AddonChannel",
+    "ChatFakeMessagePreventing", "Chat.MuteFirstLogin", "Channel.RestrictedLfg",
+    "Channel.SilentlyGMJoin", "PreserveCustomChannels", "AllowTwoSide.Accounts",
+    "AllowTwoSide.Interaction.Calendar", "AllowTwoSide.Interaction.Chat",
+    "AllowTwoSide.Interaction.Channel", "AllowTwoSide.Interaction.Group",
+    "AllowTwoSide.Interaction.Guild", "AllowTwoSide.Interaction.Arena",
+    "AllowTwoSide.Interaction.Auction", "TalentsInspecting", "Event.Announce",
+    "PlayerDump.DisallowPaths", "PlayerDump.DisallowOverwrite", "WipeGunshipBlizzlike.Enable",
+    "Minigob.Manabonk.Enable", "Calculate.Creature.Zone.Area.Data",
+    "Calculate.Gameoject.Zone.Area.Data", "MunchingBlizzlike.Enabled", "Daze.Enabled",
+    "InfiniteAmmo.Enabled", "Debug.Battleground", "Debug.Arena", "Debug.LFG",
+    "Respawn.DynamicEscortNPC", "Respawn.ForceCompatibilityMode",
 }
 
 META = {
@@ -273,14 +354,76 @@ def group_for(option: ConfigOption) -> str:
 def enrich(option: ConfigOption) -> dict:
     data = asdict(option)
     label, description = describe(option)
+    choices = choices_for(option)
     data["label"] = label
     data["description"] = description
+    data["type"] = field_type(option, choices)
+    data["choices"] = choices
     data["group"] = group_for(option)
     data["important"] = option.key in IMPORTANT_KEYS or option.key.startswith(("Rate.XP.", "Rate.Drop.Item."))
     data["form_name"] = form_field_name(option.file, option.key)
     data["file_label"] = option.file.rsplit("/", 1)[-1]
     data["requires_restart"] = "Worldserver" if data["file_label"] == "worldserver.conf" else "Authserver"
     return data
+
+
+def field_type(option: ConfigOption, choices: list[dict]) -> str:
+    if option.sensitive:
+        return "password"
+    if option.key in FORCE_BOOLEAN_KEYS:
+        return "boolean"
+    if option.key in FORCE_ENUM_KEYS and choices:
+        return "enum"
+    if option.key in FORCE_NUMBER_KEYS:
+        return "number"
+    if choices and len(choices) > 1:
+        return "enum"
+    if option.type == "boolean":
+        return "number"
+    return option.type
+
+
+def choices_for(option: ConfigOption) -> list[dict]:
+    text = option.description or ""
+    found: list[dict] = []
+    for value, label in re.findall(r"(?m)(-?\d+)\s*-\s*\(([^)\n]+)\)", text):
+        label = cleanup_choice(label)
+        if not any(item["value"] == value for item in found):
+            found.append({"value": value, "label": label})
+    return found[:12]
+
+
+def cleanup_choice(text: str) -> str:
+    value = text.strip()
+    replacements = [
+        (r"\bDescription\b", "Beschreibung"),
+        (r"\bDisabled\b", "deaktiviert"),
+        (r"\bEnabled\b", "aktiviert"),
+        (r"\bDisable\b", "deaktivieren"),
+        (r"\bEnable\b", "aktivieren"),
+        (r"\bNormal\b", "normal"),
+        (r"\bHigh\b", "hoch"),
+        (r"\bSpeed\b", "schnell"),
+        (r"\bBest compression\b", "beste Komprimierung"),
+        (r"\bBan IP\b", "IP bannen"),
+        (r"\bBan Account\b", "Account bannen"),
+        (r"\bSystem message\b", "Systemnachricht"),
+        (r"\bArea trigger\b", "Gebiets-Ausloeser"),
+        (r"\bBlizzlike\b", "blizzlike"),
+        (r"\bplayers\b", "Spieler"),
+        (r"\bplayer\b", "Spieler"),
+        (r"\blogging only\b", "nur protokollieren"),
+        (r"\bKick\b", "Kick"),
+        (r"\bBan\b", "Bann"),
+        (r"\bAnnounce\b", "Ankündigung"),
+        (r"\bNotify\b", "Bildschirmmeldung"),
+        (r"\bBoth\b", "beides"),
+        (r"\bFaction\b", "Fraktion"),
+        (r"\bprevent\b", "verhindern"),
+    ]
+    for pattern, replacement in replacements:
+        value = re.sub(pattern, replacement, value, flags=re.I)
+    return value
 
 
 def describe(option: ConfigOption) -> tuple[str, str]:
@@ -356,22 +499,25 @@ def description_by_prefix(key: str) -> str:
 
 def cleanup_original(text: str) -> str:
     value = " ".join(line.strip() for line in (text or "").splitlines() if line.strip())
+    value = value.replace("Enable/Disable", "Aktivieren/deaktivieren")
+    value = re.sub(r"\benable or disable\b", "aktivieren oder deaktivieren", value, flags=re.I)
+    value = re.sub(r"\benabled or disabled\b", "aktiviert oder deaktiviert", value, flags=re.I)
     replacements = [
-        ("Default", "Standard"),
-        ("Enable", "Aktiviert"),
-        ("Disable", "Deaktiviert"),
-        ("enabled", "aktiviert"),
-        ("disabled", "deaktiviert"),
-        ("player", "Spieler"),
-        ("players", "Spieler"),
-        ("creature", "Kreatur"),
-        ("creatures", "Kreaturen"),
-        ("worldserver", "Worldserver"),
-        ("authserver", "Authserver"),
-        ("database", "Datenbank"),
-        ("seconds", "Sekunden"),
-        ("milliseconds", "Millisekunden"),
+        (r"\bDescription\b", "Beschreibung"),
+        (r"\bDefault\b", "Standard"),
+        (r"\bdisabled\b", "deaktiviert"),
+        (r"\benabled\b", "aktiviert"),
+        (r"\bplayers\b", "Spieler"),
+        (r"\bplayer\b", "Spieler"),
+        (r"\bcreatures\b", "Kreaturen"),
+        (r"\bcreature\b", "Kreatur"),
+        (r"\bworldserver\b", "Worldserver"),
+        (r"\bauthserver\b", "Authserver"),
+        (r"\bdatabases\b", "Datenbanken"),
+        (r"\bdatabase\b", "Datenbank"),
+        (r"\bmilliseconds\b", "Millisekunden"),
+        (r"\bseconds\b", "Sekunden"),
     ]
-    for old, new in replacements:
-        value = value.replace(old, new)
+    for pattern, new in replacements:
+        value = re.sub(pattern, new, value, flags=re.I)
     return value

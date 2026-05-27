@@ -6,6 +6,15 @@
     <option value="0" {% if o.value in ["0","false","False","no","No"] %}selected{% endif %}>Nein / deaktiviert</option>
     <option value="1" {% if o.value in ["1","true","True","yes","Yes"] %}selected{% endif %}>Ja / aktiviert</option>
   </select>
+  {% elif o.type == "enum" %}
+  <select name="{{ o.form_name }}">
+    {% for choice in o.choices %}
+    <option value="{{ choice.value }}" {% if o.value == choice.value %}selected{% endif %}>{{ choice.value }} · {{ choice.label }}</option>
+    {% endfor %}
+    {% if o.value not in o.choices|map(attribute='value')|list %}
+    <option value="{{ o.value }}" selected>{{ o.value }} · aktueller Wert</option>
+    {% endif %}
+  </select>
   {% elif o.type == "number" %}
   <input name="{{ o.form_name }}" type="number" step="any" value="{{ o.value }}">
   {% elif o.sensitive %}

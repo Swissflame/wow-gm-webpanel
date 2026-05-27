@@ -20,6 +20,7 @@ from .services.config_scanner import scan_remote, update_value
 from .services.gm import allowed_commands, normalize_db_commands, record_command
 from .services.gm_actions import TABS, build_command, event_actions, localized_actions
 from .services.gm_transport import execute_gm_command
+from .services.server_metrics import collect_server_overview
 from .i18n import translate
 
 BASE = Path(__file__).resolve().parent
@@ -440,7 +441,10 @@ def gm_run(request: Request, db: Session = Depends(get_db), user: PanelUser = De
 
 
 def server(request: Request, db: Session = Depends(get_db), user: PanelUser = Depends(require_level(2))):
-    return render(request, "server.html", {"title": "Server"}, db)
+    cfg = all_config(db)
+    overview = collect_server_overview(cfg, selected_realm(request))
+    result = request.session.pop("server_result", None)
+    return render(request, "server.html", {"title": "Server", "overview": overview, "result": result}, db)
 
 
 def server_action(request: Request, db: Session = Depends(get_db), user: PanelUser = Depends(require_level(3)), csrf: str = Form(...), target: str = Form(...), action: str = Form(...)):
@@ -450,7 +454,8 @@ def server_action(request: Request, db: Session = Depends(get_db), user: PanelUs
     paths = {"auth": cfg["server"]["normal_path"] + "/bin/authserver", "normal": cfg["server"]["normal_path"] + "/bin/worldserver", "playerbot": cfg["server"]["playerbot_path"] + "/bin/worldserver"}
     code, out, err = SSHClient(cfg["server"]).service_action(paths[target], action)
     log_action(db, user.id, f"server_{action}", target, out + err, request.client.host if request.client else None)
-    return render(request, "server.html", {"title": "Server", "result": out or err or f"Exit {code}"}, db)
+    request.session["server_result"] = out or err or f"Exit {code}"
+    return RedirectResponse("/server", status_code=303)
 
 
 def configs(request: Request, db: Session = Depends(get_db), user: PanelUser = Depends(require_level(3))):

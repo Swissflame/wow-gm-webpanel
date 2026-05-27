@@ -2,6 +2,7 @@
 {% block content %}
 <section class="panel narrow">
   <h2>Erstinstallation</h2>
+  {% if error %}<p class="error">{{ error }}</p>{% endif %}
   <form method="post" class="grid-form">
     <input type="hidden" name="csrf" value="{{ csrf }}">
     <label>Sprache<select name="language"><option value="de">Deutsch</option><option value="en">English</option></select></label>

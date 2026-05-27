@@ -106,6 +106,8 @@ def setup_post(request: Request, db: Session = Depends(get_db), csrf: str = Form
                admin_username: str = Form(...), admin_password: str = Form(...)):
     if not verify_csrf(request, csrf):
         raise HTTPException(400, "CSRF")
+    if len(admin_password) < 8:
+        return render(request, "setup.html", {"title": "Setup", "error": "Das Admin-Passwort muss mindestens 8 Zeichen lang sein."}, db)
     set_config(db, "language", language)
     set_config(db, "server", {"wow_host": wow_host, "ssh_user": ssh_user, "ssh_password": ssh_password, "ssh_port": 22, "normal_path": "/opt/azeroth-server", "playerbot_path": "/opt/azeroth-playerbots-server"})
     set_config(db, "mysql", {"host": mysql_host, "port": 3306, "user": mysql_user, "password": mysql_password, "auth_db": "acore_auth", "world_db": "acore_world", "characters_db": "acore_characters", "pb_world_db": "pb_world", "pb_characters_db": "pb_characters", "playerbots_db": "acore_playerbots"})

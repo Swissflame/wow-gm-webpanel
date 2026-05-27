@@ -226,7 +226,7 @@ def gm_console(request: Request, db: Session = Depends(get_db), user: PanelUser 
     realm = selected_realm(request)
     lang = request.session.get("lang") or cfg.get("language") or "de"
     try:
-        commands = normalize_db_commands(wowdb.gm_commands_from_db(cfg, realm), user.gm_level)
+        commands = normalize_db_commands(wowdb.gm_commands_from_db(cfg, realm), user.gm_level, lang)
         source_error = None
     except Exception as exc:
         commands = allowed_commands(user.gm_level)

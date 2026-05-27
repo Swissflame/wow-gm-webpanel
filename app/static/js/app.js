@@ -30,7 +30,7 @@ document.addEventListener("click", (event) => {
   if (input) {
     input.value = card.dataset.command;
     input.focus();
-    input.scrollIntoView({ behavior: "smooth", block: "center" });
+    input.closest("form")?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 });
 
@@ -38,9 +38,18 @@ document.addEventListener("mouseover", (event) => {
   const item = event.target.closest(".raw-command-chips [data-command]");
   const tooltip = document.querySelector("#gmTooltip");
   if (!item || !tooltip) return;
-  const help = item.dataset.help || "Keine Beschreibung vorhanden.";
   const syntax = item.dataset.syntax || item.dataset.command;
-  tooltip.innerHTML = `<strong>${syntax}</strong><pre>${escapeHtml(help)}</pre>`;
+  const summary = item.dataset.summary || "Fuehrt diesen AzerothCore-Befehl aus.";
+  const output = item.dataset.output || "Die Antwort erscheint oben im Webpanel in der Ergebnisbox.";
+  const notes = item.dataset.notes || "";
+  tooltip.innerHTML = `
+    <strong>${escapeHtml(syntax)}</strong>
+    <dl>
+      <dt>Was passiert?</dt><dd>${escapeHtml(summary)}</dd>
+      <dt>Syntax</dt><dd><code>${escapeHtml(syntax)}</code></dd>
+      <dt>Ausgabe</dt><dd>${escapeHtml(output)}</dd>
+      ${notes ? `<dt>Hinweis</dt><dd>${escapeHtml(notes)}</dd>` : ""}
+    </dl>`;
   tooltip.hidden = false;
 });
 

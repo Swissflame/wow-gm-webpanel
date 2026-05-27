@@ -32,7 +32,14 @@
           <summary>{{ category }} <span>{{ items|length }}</span></summary>
           <div class="chips raw-command-chips">
             {% for c in items %}
-            <span data-command="{{ c.template }}" data-help="{{ c.help|e }}" data-syntax=".{{ c.name }}">.{{ c.name }}</span>
+            <span
+              data-command="{{ c.template }}"
+              data-help="{{ c.help_tooltip|e }}"
+              data-summary="{{ c.help_summary|e }}"
+              data-syntax="{{ c.help_syntax|e }}"
+              data-output="{{ c.help_output|e }}"
+              data-notes="{{ c.help_notes|e }}"
+            >.{{ c.name }}</span>
             {% endfor %}
           </div>
         </details>

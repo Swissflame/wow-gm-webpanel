@@ -1,4 +1,5 @@
 from ..models import CommandHistory
+from .gm_help import command_help
 
 CATEGORIES = {
     "account": "Accounts & Sicherheit", "character": "Charaktere", "ban": "Banns", "baninfo": "Banns", "banlist": "Banns",
@@ -52,14 +53,105 @@ FALLBACK_COMMANDS = [
     ("saveall", 3, ".saveall", "Save all players"),
 ]
 
-COMMANDS = [{"name": n, "level": s, "template": t.lstrip("."), "help": h, "category": CATEGORIES.get(n.split()[0], "Sonstige")} for n, s, t, h in FALLBACK_COMMANDS]
+FALLBACK_COMMANDS += [
+    ("account create", 3, ".account create $account $password", "Create account"),
+    ("account delete", 3, ".account delete $account", "Delete account"),
+    ("account set gmlevel", 3, ".account set gmlevel $account $level $realmid", "Set account GM level"),
+    ("account set password", 3, ".account set password $account $password $password", "Set account password"),
+    ("account set addon", 3, ".account set addon $account $addon", "Set account addon expansion"),
+    ("account lock ip", 1, ".account lock ip on/off", "Toggle account IP lock"),
+    ("gm visible", 1, ".gm visible on/off", "Toggle GM visibility"),
+    ("gm chat", 1, ".gm chat on/off", "Toggle GM chat badge"),
+    ("gm list", 1, ".gm list", "List GMs"),
+    ("gm ingame", 1, ".gm ingame", "List online GMs"),
+    ("gmannounce", 2, ".gmannounce $message", "GM announcement"),
+    ("gmnotify", 2, ".gmnotify $message", "GM notification"),
+    ("gmnameannounce", 2, ".gmnameannounce $message", "GM named announcement"),
+    ("nameannounce", 2, ".nameannounce $message", "Named announcement"),
+    ("cheat taxi", 2, ".cheat taxi on/off", "Toggle taxi cheat"),
+    ("cheat waterwalk", 2, ".cheat waterwalk on/off", "Toggle waterwalk"),
+    ("cheat casttime", 2, ".cheat casttime on/off", "Toggle cast time cheat"),
+    ("cheat cooldown", 2, ".cheat cooldown on/off", "Toggle cooldown cheat"),
+    ("cast", 3, ".cast $spell", "Cast spell"),
+    ("cast back", 3, ".cast back $spell", "Cast spell back"),
+    ("cast dist", 3, ".cast dist $spell $distance", "Cast spell by distance"),
+    ("cast self", 3, ".cast self $spell", "Cast spell on self"),
+    ("cast target", 3, ".cast target $spell", "Cast spell on target"),
+    ("teleport add", 3, ".teleport add $name", "Add teleport"),
+    ("teleport del", 3, ".teleport del $name", "Delete teleport"),
+    ("list item", 2, ".list item $name", "List items"),
+    ("lookup taxi", 2, ".lookup taxi $name", "Lookup taxi nodes"),
+    ("lookup area", 2, ".lookup area $name", "Lookup areas"),
+    ("go taxinode", 3, ".go taxinode $id", "Go to taxi node"),
+    ("go trigger", 3, ".go trigger $id", "Go to trigger"),
+    ("go xy", 3, ".go xy $x $y", "Go to coordinates"),
+    ("go xyz", 3, ".go xyz $x $y $z", "Go to coordinates"),
+    ("go zonexy", 3, ".go zonexy $x $y $zone", "Go to zone coordinates"),
+    ("pet create", 3, ".pet create", "Create pet from selected creature"),
+    ("pet learn", 3, ".pet learn $spell", "Teach pet spell"),
+    ("pet unlearn", 3, ".pet unlearn $spell", "Unteach pet spell"),
+    ("learn all my pettalents", 3, ".learn all my pettalents", "Teach all pet talents"),
+    ("character check bank", 3, ".character check bank", "Check character bank"),
+    ("dismount", 2, ".dismount", "Dismount target"),
+    ("modify scale", 3, ".modify scale $value", "Modify scale"),
+    ("save", 1, ".save", "Save selected player"),
+    ("cooldown", 2, ".cooldown", "Clear cooldowns"),
+    ("guid", 1, ".guid", "Show GUID"),
+    ("pinfo", 1, ".pinfo $character", "Show player info"),
+    ("distance", 1, ".distance", "Show distance"),
+    ("die", 2, ".die", "Kill target"),
+    ("recall", 2, ".recall $character", "Recall character"),
+    ("morph", 2, ".morph $display", "Morph target"),
+    ("demorph", 2, ".demorph", "Remove morph"),
+    ("gps", 1, ".gps", "Show GPS"),
+    ("combatstop", 2, ".combatstop", "Stop combat"),
+    ("maxskill", 2, ".maxskill", "Max skills"),
+    ("freeze", 2, ".freeze $character", "Freeze character"),
+    ("unfreeze", 2, ".unfreeze $character", "Unfreeze character"),
+    ("repairitems", 2, ".repairitems", "Repair items"),
+    ("groupsummon", 2, ".groupsummon $character", "Summon group"),
+    ("teleport group", 2, ".teleport group $character $location", "Teleport group"),
+    ("guild create", 2, ".guild create $leader $name", "Create guild"),
+    ("guild delete", 3, ".guild delete $name", "Delete guild"),
+    ("guild invite", 2, ".guild invite $character $guild", "Invite to guild"),
+    ("guild uninvite", 2, ".guild uninvite $character", "Remove from guild"),
+    ("guild rank", 2, ".guild rank $character $rank", "Set guild rank"),
+    ("mute", 2, ".mute $character $minutes $reason", "Mute account"),
+    ("unmute", 2, ".unmute $character", "Unmute account"),
+    ("damage", 3, ".damage $amount", "Damage target"),
+    ("showarea", 3, ".showarea $area", "Show area"),
+    ("hidearea", 3, ".hidearea $area", "Hide area"),
+    ("honor add", 2, ".honor add $points", "Add honor"),
+    ("honor update", 2, ".honor update", "Update honor"),
+    ("event start", 3, ".event start $id", "Start event"),
+    ("event stop", 3, ".event stop $id", "Stop event"),
+    ("event info", 2, ".event info $id", "Show event info"),
+    ("event activelist", 2, ".event activelist", "List active events"),
+    ("wchange", 3, ".wchange $weather $grade", "Change weather"),
+]
+
+COMMANDS = []
+for n, s, t, h in FALLBACK_COMMANDS:
+    help_info = command_help(n, h)
+    COMMANDS.append({
+        "name": n,
+        "level": s,
+        "template": t.lstrip("."),
+        "help": h,
+        "help_summary": help_info["summary"],
+        "help_syntax": help_info["syntax"],
+        "help_output": help_info["output"],
+        "help_notes": help_info["notes"],
+        "help_tooltip": help_info["tooltip"],
+        "category": CATEGORIES.get(n.split()[0], "Sonstige"),
+    })
 
 
 def allowed_commands(gm_level: int):
     return [cmd for cmd in COMMANDS if gm_level >= cmd["level"]]
 
 
-def normalize_db_commands(rows: list[dict], gm_level: int):
+def normalize_db_commands(rows: list[dict], gm_level: int, lang: str = "de"):
     data = []
     for row in rows:
         level = int(row.get("security") or 0)
@@ -67,11 +159,17 @@ def normalize_db_commands(rows: list[dict], gm_level: int):
             continue
         name = row.get("name") or ""
         root = name.split()[0] if name else "Sonstige"
+        help_info = command_help(name, row.get("help") or "", lang)
         data.append({
             "name": name,
             "level": level,
             "template": name,
             "help": row.get("help") or "",
+            "help_summary": help_info["summary"],
+            "help_syntax": help_info["syntax"],
+            "help_output": help_info["output"],
+            "help_notes": help_info["notes"],
+            "help_tooltip": help_info["tooltip"],
             "category": CATEGORIES.get(root, root.title()),
         })
     return data

@@ -63,7 +63,7 @@ BASE_ACTIONS = [
         "desc_de": "Häufige Aktionen für online und offline Charaktere.", "desc_en": "Common actions for online and offline characters.",
         "inputs": [{"name": "level", "kind": "number", "de": "Level", "en": "Level", "default": "80"}],
         "buttons": [
-            {"label_de": "Wiederbeleben", "label_en": "Revive", "command": "revive", "online_only": True},
+            {"label_de": "Wiederbeleben", "label_en": "Revive", "command": "revive {character}", "online_only": True},
             {"label_de": "Kicken", "label_en": "Kick", "command": "kick {character}"},
             {"label_de": "Level setzen", "label_en": "Set level", "command": "character level {character} {level}"},
             {"label_de": "Umbenennung", "label_en": "Rename", "command": "character rename {character}"},

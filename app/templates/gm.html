@@ -30,7 +30,11 @@
       {% for category, items in grouped_commands.items() %}
         <details>
           <summary>{{ category }} <span>{{ items|length }}</span></summary>
-          <div class="chips">{% for c in items %}<span data-command="{{ c.template }}">.{{ c.name }}</span>{% endfor %}</div>
+          <div class="chips raw-command-chips">
+            {% for c in items %}
+            <span data-command="{{ c.template }}" data-help="{{ c.help|e }}" data-syntax=".{{ c.name }}">.{{ c.name }}</span>
+            {% endfor %}
+          </div>
         </details>
       {% endfor %}
       </div>
@@ -43,6 +47,7 @@
         <input type="hidden" name="action_id" value="{{ action.id }}">
         <div class="action-head"><span>{{ action.icon }}</span><strong>{{ action.label }}</strong><small>GM {{ action.level }}</small><button type="button" class="favorite-toggle" data-favorite="{{ action.id }}" title="Favorit">☆</button></div>
         <p>{{ action.description }}</p>
+        {% if action.warning %}<p class="action-warning">{{ action.warning }}</p>{% endif %}
         {% if action.character == "online" %}
         <label>Online-Charakter
           <select name="character" required>
@@ -71,7 +76,7 @@
         </div>
         <div class="action-buttons">
           {% for button in action.buttons %}
-          <button name="command_template" value="{{ button.command }}" class="primary">{{ button.label }}</button>
+          <button name="command_template" value="{{ button.command }}" class="primary" {% if action.disabled %}disabled{% endif %}>{{ button.label }}</button>
           {% endfor %}
         </div>
       </form>
@@ -82,4 +87,5 @@
   </section>
   {% endfor %}
 </section>
+<div id="gmTooltip" class="gm-tooltip" hidden></div>
 {% endblock %}

@@ -28,11 +28,18 @@ def execute_gm_command(db, cfg: dict, realm: str, command: str) -> str:
         )
         if response.status_code == 401:
             return "SOAP-Fehler: Zugangsdaten wurden abgelehnt."
-        response.raise_for_status()
     except Exception as exc:
         return f"SOAP-Fehler: {exc}"
 
     match = re.search(r"<result>(.*?)</result>", response.text, re.S)
     if match:
-        return html.unescape(match.group(1)).strip() or "Befehl ausgeführt."
+        result = html.unescape(match.group(1)).strip()
+        if "does not exist" in result:
+            return f"SOAP-Fehler: {result}. Der Befehl ist in der Datenbank vorhanden, aber in der Worldserver-Konsole/SOAP nicht ausführbar oder die Syntax ist für SOAP anders."
+        return result or "Befehl ausgeführt."
+    fault = re.search(r"<faultstring>(.*?)</faultstring>", response.text, re.S)
+    if fault:
+        return f"SOAP-Fehler: {html.unescape(fault.group(1)).strip()}"
+    if response.status_code >= 400:
+        return f"SOAP-Fehler HTTP {response.status_code}: {response.text.strip()[:1200]}"
     return response.text.strip()[:2000] or "Befehl ausgeführt."

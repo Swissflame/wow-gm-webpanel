@@ -20,6 +20,9 @@ BASE_ACTIONS = [
         "id": "weather", "tab": "world", "level": 3, "icon": "W", "character": "none",
         "de": "Wetter", "en": "Weather",
         "desc_de": "Setzt Wetterart und Stärke in der aktuellen Zone.", "desc_en": "Sets weather type and intensity in the current zone.",
+        "warning_de": "Hinweis: Dein Worldserver meldet wchange per SOAP als nicht ausführbar. Im Expertenmodus bleibt die Syntax sichtbar.",
+        "warning_en": "Note: your worldserver reports wchange as unavailable through SOAP. Syntax remains visible in expert mode.",
+        "disabled": True,
         "command": "wchange {weather} {grade}",
         "inputs": [
             {"name": "weather", "kind": "select", "de": "Wetter", "en": "Weather", "default": "0",
@@ -60,7 +63,7 @@ BASE_ACTIONS = [
         "desc_de": "Häufige Aktionen für online und offline Charaktere.", "desc_en": "Common actions for online and offline characters.",
         "inputs": [{"name": "level", "kind": "number", "de": "Level", "en": "Level", "default": "80"}],
         "buttons": [
-            {"label_de": "Wiederbeleben", "label_en": "Revive", "command": "revive {character}", "online_only": True},
+            {"label_de": "Wiederbeleben", "label_en": "Revive", "command": "revive", "online_only": True},
             {"label_de": "Kicken", "label_en": "Kick", "command": "kick {character}"},
             {"label_de": "Level setzen", "label_en": "Set level", "command": "character level {character} {level}"},
             {"label_de": "Umbenennung", "label_en": "Rename", "command": "character rename {character}"},
@@ -146,6 +149,8 @@ def localized_actions(lang: str, gm_level: int) -> list[dict]:
         item = {k: v for k, v in action.items() if k not in {"de", "en", "desc_de", "desc_en"}}
         item["label"] = tr(lang, action["de"], action["en"])
         item["description"] = tr(lang, action["desc_de"], action["desc_en"])
+        if action.get("warning_de"):
+            item["warning"] = tr(lang, action["warning_de"], action["warning_en"])
         inputs = []
         for field in action.get("inputs", []):
             f = field.copy()

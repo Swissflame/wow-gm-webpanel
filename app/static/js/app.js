@@ -30,8 +30,43 @@ document.addEventListener("click", (event) => {
   if (input) {
     input.value = card.dataset.command;
     input.focus();
+    input.scrollIntoView({ behavior: "smooth", block: "center" });
   }
 });
+
+document.addEventListener("mouseover", (event) => {
+  const item = event.target.closest(".raw-command-chips [data-command]");
+  const tooltip = document.querySelector("#gmTooltip");
+  if (!item || !tooltip) return;
+  const help = item.dataset.help || "Keine Beschreibung vorhanden.";
+  const syntax = item.dataset.syntax || item.dataset.command;
+  tooltip.innerHTML = `<strong>${syntax}</strong><pre>${escapeHtml(help)}</pre>`;
+  tooltip.hidden = false;
+});
+
+document.addEventListener("mousemove", (event) => {
+  const tooltip = document.querySelector("#gmTooltip");
+  if (!tooltip || tooltip.hidden) return;
+  const x = Math.min(event.clientX + 18, window.innerWidth - tooltip.offsetWidth - 18);
+  const y = Math.min(event.clientY + 18, window.innerHeight - tooltip.offsetHeight - 18);
+  tooltip.style.left = `${x}px`;
+  tooltip.style.top = `${y}px`;
+});
+
+document.addEventListener("mouseout", (event) => {
+  if (!event.target.closest(".raw-command-chips [data-command]")) return;
+  const tooltip = document.querySelector("#gmTooltip");
+  if (tooltip) tooltip.hidden = true;
+});
+
+function escapeHtml(value) {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
 
 function readFavorites() {
   try {

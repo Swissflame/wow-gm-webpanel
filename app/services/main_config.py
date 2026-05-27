@@ -435,58 +435,269 @@ def cleanup_choice(text: str) -> str:
 
 
 def describe(option: ConfigOption) -> tuple[str, str]:
-    if option.key in META:
-        return META[option.key]
     label = human_label(option.key)
+    if option.key in META:
+        return label, META[option.key][1]
     prefix_desc = description_by_prefix(option.key)
-    original = cleanup_original(option.description)
-    if original and prefix_desc:
-        return label, f"{prefix_desc} Originalhinweis aus der Config: {original}"
     if prefix_desc:
         return label, prefix_desc
-    if original:
-        return label, f"{original} Wirkung im Spiel oder Betrieb haengt vom genauen AzerothCore-Modul ab; vor Aenderung Wert, Einheit und Neustartbedarf pruefen."
     return label, "Spezialoption aus der AzerothCore-Hauptkonfiguration. Aendere diesen Wert nur, wenn du die Folge kennst oder gezielt testest; viele Werte wirken erst nach Neustart."
 
 
 def human_label(key: str) -> str:
-    label = key.replace(".", " ").replace("_", " ")
-    replacements = {
-        "Corpse Decay": "Leichnam-Dauer",
-        "Rate Corpse Decay Looted": "Leichnam-Dauer nach dem Plündern",
-        "Creature": "Kreatur",
-        "Creatures": "Kreaturen",
+    special = special_label(key)
+    if special:
+        return special
+    parts = re.split(r"[._-]+", key)
+    return " ".join(translate_label_part(part) for part in parts if part)
+
+
+def special_label(key: str) -> str:
+    if key.startswith("Rate.Creature."):
+        parts = key.split(".")
+        creature_type = creature_label(parts[2:-1])
+        stat = {
+            "HP": "Lebenspunkte",
+            "Damage": "Nahkampfschaden",
+            "SpellDamage": "Zauberschaden",
+        }.get(parts[-1], translate_label_part(parts[-1]))
+        return f"Kreaturen-{stat}: {creature_type}"
+    if key.startswith("Rate.Drop.Item."):
+        quality = item_quality_label(key.rsplit(".", 1)[-1])
+        return f"Itemdrop-Multiplikator: {quality}"
+    if key.startswith("Rate.SellValue.Item."):
+        quality = item_quality_label(key.rsplit(".", 1)[-1])
+        return f"Verkaufspreis-Multiplikator: {quality}"
+    if key.startswith("Rate.BuyValue.Item."):
+        quality = item_quality_label(key.rsplit(".", 1)[-1])
+        return f"Kaufpreis-Multiplikator: {quality}"
+    if key.startswith("Rate.XP."):
+        return {
+            "Rate.XP.Kill": "Erfahrung durch Gegner",
+            "Rate.XP.Quest": "Erfahrung durch Quests",
+            "Rate.XP.Quest.DF": "Erfahrung durch Dungeonfinder-Quests",
+            "Rate.XP.Explore": "Erfahrung durch Entdecken",
+            "Rate.XP.Pet": "Begleiter-Erfahrung",
+            "Rate.XP.BattlegroundBonus": "Schlachtfeld-Bonus-Erfahrung",
+        }.get(key, "Erfahrungs-Multiplikator")
+    if key.startswith("Rate.Reputation."):
+        return "Ruf-Multiplikator: " + " ".join(translate_label_part(part) for part in key.split(".")[2:])
+    if key.startswith("Rate.Auction."):
+        return {
+            "Rate.Auction.Time": "Auktionsdauer-Multiplikator",
+            "Rate.Auction.Deposit": "Auktionshaus-Anzahlung-Multiplikator",
+            "Rate.Auction.Cut": "Auktionshaus-Gebühr-Multiplikator",
+        }.get(key, "Auktionshaus-Multiplikator")
+    if key.startswith("SkillChance."):
+        return "Skillchance: " + " ".join(translate_label_part(part) for part in key.split(".")[1:])
+    if key.startswith("SkillGain."):
+        return "Skillgewinn: " + " ".join(translate_label_part(part) for part in key.split(".")[1:])
+    if key.startswith("Corpse.Decay."):
+        return META.get(key, ("Leichnam-Dauer", ""))[0]
+    if key.startswith("Battleground."):
+        return "Schlachtfeld: " + " ".join(translate_label_part(part) for part in key.split(".")[1:])
+    if key.startswith("Arena."):
+        return "Arena: " + " ".join(translate_label_part(part) for part in key.split(".")[1:])
+    if key.startswith("Guild."):
+        return "Gilde: " + " ".join(translate_label_part(part) for part in key.split(".")[1:])
+    if key.startswith("AllowTwoSide."):
+        return "Fraktionsübergreifend: " + " ".join(translate_label_part(part) for part in key.split(".")[1:])
+    if key.startswith("Respawn.DynamicRate"):
+        target = "Kreaturen" if key.endswith("Creature") else "Spielobjekte"
+        return f"Dynamischer Respawn-Faktor: {target}"
+    if key.startswith("Respawn.DynamicMinimum"):
+        target = "Kreaturen" if key.endswith("Creature") else "Spielobjekte"
+        return f"Minimaler dynamischer Respawn: {target}"
+    if key.startswith("DungeonFinder."):
+        return "Dungeonfinder: " + " ".join(translate_label_part(part) for part in key.split(".")[1:])
+    if key.startswith("Instance."):
+        return "Instanzen: " + " ".join(translate_label_part(part) for part in key.split(".")[1:])
+    if key.startswith("Wintergrasp."):
+        return "Tausendwinter: " + " ".join(translate_label_part(part) for part in key.split(".")[1:])
+    if key.startswith("GM."):
+        return "GM: " + " ".join(translate_label_part(part) for part in key.split(".")[1:])
+    if key.startswith("Warden."):
+        return "Warden: " + " ".join(translate_label_part(part) for part in key.split(".")[1:])
+    return ""
+
+
+def creature_label(parts: list[str]) -> str:
+    value = ".".join(parts)
+    return {
+        "Normal": "normale Gegner",
+        "Elite.Elite": "Elite-Gegner",
+        "Elite.RARE": "seltene Gegner",
+        "Elite.RAREELITE": "seltene Elite-Gegner",
+        "Elite.WORLDBOSS": "Weltbosse",
+    }.get(value, " ".join(translate_label_part(part) for part in parts))
+
+
+def item_quality_label(value: str) -> str:
+    return {
+        "Poor": "grau / schlecht",
+        "Normal": "weiß / normal",
+        "Uncommon": "grün / ungewöhnlich",
+        "Rare": "blau / selten",
+        "Epic": "episch",
+        "Legendary": "legendär",
+        "Artifact": "Artefakt",
+        "Heirloom": "Erbstück",
+        "Referenced": "referenzierte Beute",
+        "ReferencedAmount": "Menge referenzierter Beute",
+        "GroupAmount": "Gruppenbeute-Menge",
+    }.get(value, translate_label_part(value))
+
+
+def translate_label_part(part: str) -> str:
+    words = {
+        "Enable": "aktiv",
+        "Enabled": "aktiv",
+        "Disable": "deaktivieren",
+        "Disabled": "deaktiviert",
         "Player": "Spieler",
         "Players": "Spieler",
+        "Creature": "Kreatur",
+        "Creatures": "Kreaturen",
+        "NPC": "NPC",
+        "Npc": "NPC",
         "Quest": "Quest",
         "Quests": "Quests",
         "Battleground": "Schlachtfeld",
         "Arena": "Arena",
         "Guild": "Gilde",
         "Mail": "Post",
-        "Weather": "Wetter",
+        "Auction": "Auktion",
+        "AuctionHouse": "Auktionshaus",
         "Visibility": "Sichtweite",
         "Distance": "Distanz",
-        "Normal": "Normal",
-        "Rare": "Selten",
+        "Weather": "Wetter",
+        "Interval": "Intervall",
+        "Delay": "Verzögerung",
+        "Timer": "Timer",
+        "Time": "Zeit",
+        "Count": "Anzahl",
+        "Max": "Maximum",
+        "Min": "Minimum",
+        "Level": "Level",
+        "Req": "Anforderung",
+        "Reward": "Belohnung",
+        "Money": "Geld",
+        "Cost": "Kosten",
+        "Honor": "Ehre",
+        "Reputation": "Ruf",
+        "Damage": "Schaden",
+        "SpellDamage": "Zauberschaden",
+        "Health": "Gesundheit",
+        "Mana": "Mana",
+        "Rage": "Wut",
+        "Energy": "Energie",
+        "Focus": "Fokus",
+        "RunicPower": "Runenmacht",
+        "Normal": "normal",
+        "Rare": "selten",
         "Elite": "Elite",
-        "Rareelite": "Seltene Elite",
-        "Worldboss": "Weltboss",
+        "RareElite": "seltene Elite",
+        "WorldBoss": "Weltboss",
+        "Database": "Datenbank",
+        "WorkerThreads": "Arbeits-Threads",
+        "SynchThreads": "Synchrone Threads",
+        "Reconnect": "Wiederverbindung",
+        "Attempts": "Versuche",
+        "Seconds": "Sekunden",
+        "Port": "Port",
+        "BindIP": "Bind-IP",
+        "LogsDir": "Logverzeichnis",
+        "DataDir": "Datenverzeichnis",
+        "TempDir": "Temp-Verzeichnis",
+        "PidFile": "PID-Datei",
+        "Server": "Server",
+        "World": "Welt",
+        "Realm": "Realm",
+        "Characters": "Charaktere",
+        "Character": "Charakter",
+        "Start": "Start",
+        "Rate": "Multiplikator",
+        "Drop": "Drop",
+        "Item": "Item",
+        "Items": "Items",
+        "Looted": "nach dem Plündern",
+        "Decay": "Dauer",
+        "Corpse": "Leichnam",
+        "Chat": "Chat",
+        "Channel": "Kanal",
+        "Whisper": "Flüstern",
+        "Say": "Sagen",
+        "Yell": "Schreien",
+        "Group": "Gruppe",
+        "Raid": "Raid",
+        "LFG": "Dungeonfinder",
+        "Queue": "Warteschlange",
+        "Announcer": "Ankündigung",
+        "Win": "Sieg",
+        "Lose": "Niederlage",
+        "Rating": "Wertung",
+        "Modifier": "Modifikator",
+        "Modifier1": "Modifikator 1",
+        "Modifier2": "Modifikator 2",
+        "Matchmaker": "Gegnersuche",
+        "Personal": "persönlich",
+        "Bank": "Bank",
+        "Tab": "Fach",
+        "Cost0": "Kosten Fach 1",
+        "Cost1": "Kosten Fach 2",
+        "Cost2": "Kosten Fach 3",
+        "Cost3": "Kosten Fach 4",
+        "Cost4": "Kosten Fach 5",
+        "Cost5": "Kosten Fach 6",
+        "Two": "zwei",
+        "Side": "Fraktionen",
+        "Interaction": "Interaktion",
+        "Calendar": "Kalender",
+        "Invite": "Einladung",
+        "Kick": "Kick",
+        "Ban": "Bann",
+        "Mute": "Stummschaltung",
+        "Ticket": "Ticket",
+        "Tickets": "Tickets",
+        "Update": "Update",
+        "Updates": "Updates",
+        "Clean": "Bereinigen",
+        "Debug": "Debug",
+        "Log": "Log",
+        "Logger": "Logger",
+        "Metric": "Metrik",
     }
-    for old, new in replacements.items():
-        label = re.sub(rf"\b{re.escape(old)}\b", new, label, flags=re.I)
-    return label
+    if part in words:
+        return words[part]
+    split = split_camel(part)
+    if split != part:
+        return " ".join(translate_label_part(piece) for piece in split.split())
+    return split
+
+
+def split_camel(value: str) -> str:
+    value = re.sub(r"(?<=[A-Za-z])(?=\d)", " ", value)
+    value = re.sub(r"(?<=\d)(?=[A-Za-z])", " ", value)
+    return re.sub(r"(?<!^)(?=[A-Z])", " ", value).strip()
 
 
 def description_by_prefix(key: str) -> str:
     if key.startswith("Rate.XP."):
-        return "XP-Multiplikator. Hoehere Werte beschleunigen Leveln; Spieler verlassen Gebiete schneller und erreichen Dungeons/Endgame frueher."
+        return "Multiplikator fuer erhaltene Erfahrungspunkte. Hoehere Werte beschleunigen das Leveln; Spieler verlassen Gebiete schneller und erreichen Dungeons oder Endgame frueher."
     if key.startswith("Rate.Drop."):
-        return "Drop-Multiplikator. Hoehere Werte erzeugen mehr Beute und Gold, was Auktionshaus, Berufe und Serverwirtschaft direkt beeinflusst."
+        return "Multiplikator fuer Beute. Hoehere Werte erzeugen mehr Drops oder Gold und beeinflussen dadurch Auktionshaus, Berufe und Serverwirtschaft direkt."
+    if key.startswith("Rate.SellValue.Item."):
+        return "Multiplikator fuer den Verkaufswert beim Haendler. Hoehere Werte geben Spielern mehr Geld beim Verkaufen dieser Itemqualitaet und bringen mehr Gold in die Wirtschaft."
+    if key.startswith("Rate.BuyValue.Item."):
+        return "Multiplikator fuer den Kaufpreis beim Haendler. Hoehere Werte machen Items dieser Qualitaet beim NPC teurer."
+    if key.startswith("Rate.Auction."):
+        return "Multiplikator fuer Auktionshausregeln. Je nach Feld wird Auktionsdauer, Anzahlung oder Auktionshausgebuehr veraendert; Spieler merken das direkt beim Einstellen und Verkaufen von Auktionen."
     if key.startswith("Rate.Creature.") and key.endswith(".HP"):
-        return "Lebenspunkte-Multiplikator fuer Kreaturen dieser Kategorie. Hoeher macht Kaempfe laenger; niedriger macht Solo-Spiel einfacher."
+        return "Multiplikator fuer die Lebenspunkte dieser Gegnerkategorie. Hoehere Werte machen Kaempfe laenger und schwerer; niedrigere Werte machen Solo-Spiel und Farmen einfacher."
     if key.startswith("Rate.Creature.") and "Damage" in key:
-        return "Schadens-Multiplikator fuer Kreaturen dieser Kategorie. Hoeher macht die Welt gefaehrlicher; niedriger erleichtert Solo- und Twink-Spiel."
+        if key.endswith("SpellDamage"):
+            return "Multiplikator fuer Zauberschaden dieser Gegnerkategorie. Hoehere Werte machen Caster-Gegner, Bosse und Magieangriffe gefaehrlicher; niedrigere Werte entschärfen magielastige Kaempfe."
+        return "Multiplikator fuer Nahkampf- und normalen Schaden dieser Gegnerkategorie. Hoehere Werte machen die Welt gefaehrlicher; niedrigere Werte erleichtern Solo- und Twink-Spiel."
     if key.startswith("SkillChance."):
         return "Chance fuer Skillfortschritt. Hoehere Werte lassen Berufe und Waffenfertigkeiten schneller steigen."
     if key.startswith("SkillGain."):
@@ -531,6 +742,14 @@ def description_by_prefix(key: str) -> str:
         return "Questverhalten. Spieler bemerken dies bei Questanzeige, Questbedingungen oder Belohnungen."
     if key.startswith("Creature") or key.startswith("Npc"):
         return "Kreaturen- und NPC-Verhalten. Beeinflusst Aggro, Flucht, Bewegung oder Regeneration in der Welt."
+    if key.startswith("Network."):
+        return "Netzwerkoption fuer den Serverprozess. Falsche Werte koennen Verbindungen stoeren; sinnvolle Werte verbessern Stabilitaet oder Latenz."
+    if key.startswith("Chat") or key.startswith("Channel."):
+        return "Chat- und Kanalregel. Spieler merken diese Einstellung beim Schreiben, Fluestern, Gruppensuchen oder beim Schutz gegen Spam und gefaelschte Nachrichten."
+    if key.startswith("AllowTwoSide."):
+        return "Fraktionsuebergreifende Interaktion. Aktiviert oder deaktiviert, ob Allianz und Horde in diesem Bereich miteinander interagieren duerfen."
+    if key.startswith("Respawn."):
+        return "Respawn-Verhalten fuer Kreaturen oder Objekte. Beeinflusst, wann Gegner oder Spielobjekte nach Tod, Nutzung oder hoher Spielerzahl wieder erscheinen."
     return ""
 
 

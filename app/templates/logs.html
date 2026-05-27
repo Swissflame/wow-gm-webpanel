@@ -1,0 +1,3 @@
+{% extends "base.html" %}{% block content %}
+<table><tr><th>Zeit</th><th>User</th><th>Aktion</th><th>Ziel</th><th>Details</th><th>IP</th></tr>{% for i in items %}<tr><td>{{ i.created_at }}</td><td>{{ i.username }}</td><td>{{ i.action }}</td><td>{{ i.target }}</td><td>{{ i.detail }}</td><td>{{ i.ip_address }}</td></tr>{% endfor %}</table>
+{% endblock %}

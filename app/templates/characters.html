@@ -1,0 +1,6 @@
+{% extends "base.html" %}{% block content %}
+<form class="search"><input name="q" value="{{ q }}" placeholder="Charakter suchen"><button>Suchen</button></form>
+<table><tr><th>Name</th><th>Realm</th><th>Account</th><th>Level</th><th>Gold</th><th>Online</th><th>Zone</th><th>Map</th><th>Position</th></tr>
+{% for c in items %}<tr><td>{{ c.name }}</td><td>{{ c.realm }}</td><td>{{ c.account }}</td><td>{{ c.level }}</td><td>{{ (c.money or 0) // 10000 }}</td><td>{{ c.online }}</td><td>{{ c.zone }}</td><td>{{ c.map }}</td><td>{{ c.x }}, {{ c.y }}, {{ c.z }}</td></tr>{% endfor %}
+</table>
+{% endblock %}

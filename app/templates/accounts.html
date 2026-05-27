@@ -1,0 +1,6 @@
+{% extends "base.html" %}{% block content %}
+<form class="search"><input name="q" value="{{ q }}" placeholder="Account suchen"><button>Suchen</button></form>
+<table><tr><th>ID</th><th>Account</th><th>E-Mail</th><th>GM</th><th>Online</th><th>Gesperrt</th><th>Letzter Login</th><th>IP</th></tr>
+{% for a in items %}<tr><td>{{ a.id }}</td><td>{{ a.username }}</td><td>{{ a.email }}</td><td>{{ a.gm_level }}</td><td>{{ a.online }}</td><td>{{ a.locked }}</td><td>{{ a.last_login }}</td><td>{{ a.last_ip }}</td></tr>{% endfor %}
+</table>
+{% endblock %}

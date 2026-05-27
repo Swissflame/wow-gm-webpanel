@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="{{ cfg.get('language','de') }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ title }} - WoW GM Webpanel</title>
+  <link rel="stylesheet" href="/static/css/app.css">
+  <script defer src="/static/js/app.js"></script>
+</head>
+<body>
+<aside class="sidebar">
+  <div class="brand">WoW GM<br><span>Webpanel</span></div>
+  {% if user %}
+  <nav>
+    <a href="/dashboard">Dashboard</a>
+    <a href="/server">Server</a>
+    <a href="/online">Online-Spieler</a>
+    {% if user.gm_level >= 1 %}<a href="/accounts">Accounts</a><a href="/characters">Charaktere</a><a href="/gm">GM-Befehle</a>{% endif %}
+    {% if user.gm_level >= 2 %}<a href="/ahbot">AHBot</a><a href="/playerbots">Playerbots</a><a href="/logs">Logs</a>{% endif %}
+    {% if user.gm_level >= 3 %}<a href="/configs">Configs</a><a href="/backup">Backup/Restore</a><a href="/settings">Einstellungen</a>{% endif %}
+  </nav>
+  <form method="post" action="/logout"><input type="hidden" name="csrf" value="{{ csrf }}"><button>Logout</button></form>
+  {% endif %}
+</aside>
+<main class="main">
+  <header class="topbar">
+    <h1>{{ title }}</h1>
+    {% if user %}<div class="badge">{{ user.username }} · GM {{ user.gm_level }}</div>{% endif %}
+  </header>
+  {% block content %}{% endblock %}
+</main>
+</body>
+</html>

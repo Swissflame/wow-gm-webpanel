@@ -1,0 +1,6 @@
+{% extends "base.html" %}{% block content %}
+{% if error %}<p class="error">{{ error }}</p>{% endif %}
+<table><tr><th>Name</th><th>Account</th><th>Level</th><th>Klasse</th><th>Rasse</th><th>Zone</th><th>Map</th><th>Position</th><th>Realm</th><th>GM</th></tr>
+{% for p in players %}<tr><td>{{ p.name }}</td><td>{{ p.username }}</td><td>{{ p.level }}</td><td>{{ p.class }}</td><td>{{ p.race }}</td><td>{{ p.zone }}</td><td>{{ p.map }}</td><td>{{ p.x }}, {{ p.y }}, {{ p.z }}</td><td>{{ p.realm }}</td><td>{{ p.gm_level }}</td></tr>{% endfor %}
+</table>
+{% endblock %}

@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="panel narrow">
+  <h2>Erstinstallation</h2>
+  <form method="post" class="grid-form">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <label>Sprache<select name="language"><option value="de">Deutsch</option><option value="en">English</option></select></label>
+    <label>WoW-Server-IP<input name="wow_host" value="192.168.1.118" required></label>
+    <label>SSH-Benutzer<input name="ssh_user" value="klaus" required></label>
+    <label>SSH-Passwort<input type="password" name="ssh_password" autocomplete="new-password"></label>
+    <label>MySQL-Host<input name="mysql_host" value="192.168.1.118" required></label>
+    <label>MySQL-Benutzer<input name="mysql_user" value="acore" required></label>
+    <label>MySQL-Passwort<input type="password" name="mysql_password" autocomplete="new-password"></label>
+    <label>Admin-Benutzer<input name="admin_username" required></label>
+    <label>Admin-Passwort<input type="password" name="admin_password" required autocomplete="new-password"></label>
+    <button class="primary">Konfiguration speichern</button>
+  </form>
+</section>
+{% endblock %}

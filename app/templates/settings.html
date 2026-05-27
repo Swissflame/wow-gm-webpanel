@@ -1,0 +1,3 @@
+{% extends "base.html" %}{% block content %}
+<section class="panel danger"><h2>Alles auf Standard zurücksetzen</h2><p>Setzt nur die Webpanel-Konfiguration zurück. WoW-Datenbanken werden nicht gelöscht.</p><form method="post" action="/reset"><input type="hidden" name="csrf" value="{{ csrf }}"><label>Bestätigung<input name="confirm" placeholder="ALLES ZURUECKSETZEN"></label><button>Alles auf Standard zurücksetzen</button></form></section>
+{% endblock %}

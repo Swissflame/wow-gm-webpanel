@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="cards">
+  <div class="card"><span>Authserver</span><strong class="{{ 'ok' if status.auth else 'bad' }}">{{ 'Online' if status.auth else 'Offline' }}</strong></div>
+  <div class="card"><span>Realm 1</span><strong class="{{ 'ok' if status.normal else 'bad' }}">{{ 'Online' if status.normal else 'Offline' }}</strong></div>
+  <div class="card"><span>Playerbot-Realm</span><strong class="{{ 'ok' if status.playerbot else 'bad' }}">{{ 'Online' if status.playerbot else 'Offline' }}</strong></div>
+  <div class="card"><span>Spieler online</span><strong>{{ stats.get('online','?') }}</strong></div>
+  <div class="card"><span>Accounts</span><strong>{{ stats.get('accounts','?') }}</strong></div>
+  <div class="card"><span>Charaktere</span><strong>{{ stats.get('characters','?') }}</strong></div>
+  <div class="card"><span>Auktionen</span><strong>{{ stats.get('auctions','?') }}</strong></div>
+  <div class="card"><span>Playerbot-Chars</span><strong>{{ stats.get('pb_characters','?') }}</strong></div>
+</section>
+{% if stats.error %}<p class="error">{{ stats.error }}</p>{% endif %}
+{% endblock %}

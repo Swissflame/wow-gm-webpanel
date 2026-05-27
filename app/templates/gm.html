@@ -1,0 +1,12 @@
+{% extends "base.html" %}{% block content %}
+<section class="panel">
+  <h2>GM-Befehl ausführen</h2>
+  <form method="post" action="/gm/run" class="grid-form">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <label>Realm<select name="realm"><option value="normal">Normal</option><option value="playerbot">Playerbot</option></select></label>
+    <label>Befehl<input name="command" placeholder="announce Wartung in 5 Minuten" required></label>
+    <button class="primary">Protokollieren / senden</button>
+  </form>
+</section>
+<section class="panel"><h2>Erlaubte Vorlagen</h2><div class="chips">{% for c in commands %}<span>{{ c.name }} · {{ c.template }}</span>{% endfor %}</div></section>
+{% endblock %}

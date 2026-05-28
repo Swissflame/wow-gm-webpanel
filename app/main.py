@@ -151,7 +151,7 @@ def setup_post(request: Request, db: Session = Depends(get_db), csrf: str = Form
     set_config(db, "realms", {"auth_port": 3724, "normal_world_port": 8085, "playerbot_world_port": 8086})
     user = db.query(PanelUser).filter_by(username=admin_username).first() or PanelUser(username=admin_username)
     user.password_hash = hash_password(admin_password)
-    user.gm_level = 3
+    user.gm_level = 4
     user.is_active = True
     db.add(user)
     set_config(db, "setup_complete", True)
@@ -184,6 +184,16 @@ def login_post(request: Request, db: Session = Depends(get_db), csrf: str = Form
             ok = False
     if not ok or not user:
         return render(request, "login.html", {"title": "Login", "error": "Login fehlgeschlagen"}, db)
+    if cfg.get("setup_complete"):
+        try:
+            account = wowdb.account_by_username(cfg["mysql"], cfg["mysql"]["auth_db"], username)
+            if account and (not user.wow_account_id or user.wow_account_id == int(account["id"])):
+                user.wow_account_id = int(account["id"])
+                user.gm_level = wowdb.gm_level(cfg["mysql"], cfg["mysql"]["auth_db"], int(account["id"]))
+                db.add(user)
+                db.commit()
+        except Exception:
+            pass
     request.session["uid"] = user.id
     log_action(db, user.id, "login", ip=request.client.host if request.client else None)
     return RedirectResponse("/dashboard", status_code=303)
@@ -256,6 +266,7 @@ def account_create(request: Request, db: Session = Depends(get_db), user: PanelU
     if not verify_csrf(request, csrf):
         raise HTTPException(400, "CSRF")
     try:
+        gm_level = max(0, min(int(gm_level), 4))
         account_id = wowdb.create_account(all_config(db), username, password, email, expansion, gm_level)
         log_action(db, user.id, "account_create", str(account_id), username, request.client.host if request.client else None)
         return RedirectResponse(f"/accounts/{account_id}", status_code=303)
@@ -270,6 +281,7 @@ def account_save(request: Request, account_id: int, db: Session = Depends(get_db
     if not verify_csrf(request, csrf):
         raise HTTPException(400, "CSRF")
     try:
+        gm_level = max(0, min(int(gm_level), 4))
         wowdb.update_account(all_config(db), account_id, email, locked, expansion, gm_level, password)
         log_action(db, user.id, "account_update", str(account_id), f"locked={locked}, expansion={expansion}, gm={gm_level}", request.client.host if request.client else None)
         request.session["account_flash"] = "Account gespeichert."
@@ -602,7 +614,7 @@ def collect_sensitive_server_info(cfg: dict) -> list[dict]:
             ("Benutzer", (cfg.get("soap_cms") or {}).get("username") or "nicht eingerichtet"),
             ("Passwort", (cfg.get("soap_cms") or {}).get("password") or "nicht eingerichtet"),
             ("Account-ID", (cfg.get("soap_cms") or {}).get("account_id") or "unbekannt"),
-            ("GM-Level", (cfg.get("soap_cms") or {}).get("gm_level") or "3 empfohlen"),
+            ("GM-Level", (cfg.get("soap_cms") or {}).get("gm_level") or "3 oder 4 empfohlen"),
             ("Auth-Datenbank", (cfg.get("soap_cms") or {}).get("auth_db") or cfg["mysql"].get("auth_db")),
             ("Normal-Realm SOAP", f"{(cfg.get('soap_cms') or {}).get('normal_host') or cfg['gm_transport'].get('normal_host')}:{(cfg.get('soap_cms') or {}).get('normal_port') or cfg['gm_transport'].get('normal_port')}"),
             ("Playerbot-Realm SOAP", f"{(cfg.get('soap_cms') or {}).get('playerbot_host') or cfg['gm_transport'].get('playerbot_host')}:{(cfg.get('soap_cms') or {}).get('playerbot_port') or cfg['gm_transport'].get('playerbot_port')}"),

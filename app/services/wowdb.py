@@ -532,6 +532,7 @@ def delete_character_rows(conn, guid: int, cleanup: dict | None = None):
 
 
 def _set_account_access(conn, account_id: int, gm_level_value: int):
+    gm_level_value = max(0, min(int(gm_level_value), 4))
     conn.execute(text("DELETE FROM account_access WHERE id=:id AND RealmID=-1"), {"id": account_id})
     if gm_level_value > 0:
         conn.execute(text("INSERT INTO account_access (id, gmlevel, RealmID) VALUES (:id, :gm, -1)"), {"id": account_id, "gm": gm_level_value})

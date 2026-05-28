@@ -5,6 +5,7 @@
 - Sessions sind signiert
 - Adminaktionen werden im Audit-Log protokolliert
 - GM-Menüs und Aktionen werden nach GM-Level gefiltert
+- Unterstützte GM-Level: 0 Spieler, 1 GM, 2 Senior GM, 3 Admin, 4 höchste Admin-/Console-Stufe
 - AzerothCore Login unterstützt aktuelle SRP6-Felder `salt`/`verifier` und alte `sha_pass_hash`
 
 ## Empfehlung

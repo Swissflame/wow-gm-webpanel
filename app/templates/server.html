@@ -80,7 +80,7 @@
   {% if user.gm_level >= 3 %}
   <section class="panel danger">
     <h2>Zusätzliche Serverinformationen</h2>
-    <p>Dieser Bereich zeigt gespeicherte Zugangsdaten, Datenbanknamen, Ports, Pfade und erkannte IP-/Netzwerkdaten. Nur GM-Level 3 kann ihn öffnen; jede Anzeige wird protokolliert.</p>
+    <p>Dieser Bereich zeigt gespeicherte Zugangsdaten, Datenbanknamen, Ports, Pfade und erkannte IP-/Netzwerkdaten. Nur GM-Level 3 oder 4 kann ihn öffnen; jede Anzeige wird protokolliert.</p>
     <form method="post" action="/server/extra-info" class="grid-form">
       <input type="hidden" name="csrf" value="{{ csrf }}">
       <label>Passwort erneut eingeben

@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- GM-Level 4 als höchste Admin-/Console-Stufe in Accountverwaltung, Setup und Dokumentation ergänzt.
+
 ## 0.1.0
 
 - Initiales Webpanel mit Setup-Wizard

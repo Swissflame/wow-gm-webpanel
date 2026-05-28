@@ -13,7 +13,7 @@ Der Scanner liest per SSH alle `.conf` Dateien unter:
 
 Kommentare direkt oberhalb eines Schlüssels werden als Beschreibung angezeigt. Typen werden heuristisch erkannt: Boolean, Zahl, Text, Pfad, Passwort.
 
-Vor jeder Änderung wird eine Backup-Datei mit `.wowpanel.bak` erstellt. Nur GM-Level 3 darf Konfigurationen ändern.
+Vor jeder Änderung wird eine Backup-Datei mit `.wowpanel.bak` erstellt. GM-Level 3 und 4 dürfen Konfigurationen ändern; Level 4 wird als höchste Admin-/Console-Stufe unterstützt.
 
 ## Server-Neustart
 

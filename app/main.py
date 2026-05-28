@@ -22,6 +22,7 @@ from .services.gm_actions import TABS, build_command, event_actions, localized_a
 from .services.gm_transport import execute_gm_command
 from .services.server_metrics import collect_server_overview
 from .services.ahbot_config import grouped_fields, load_ahbot, reset_ahbot, save_ahbot, schedule_realm_restart, summarize
+from .services.playerbot_config import grouped_fields as grouped_playerbot_fields, load_playerbot, reset_playerbot, save_playerbot, summarize as summarize_playerbot
 from .services.main_config import grouped_main_configs, load_main_configs, save_main_configs, schedule_auth_restart, summarize_main_configs
 from .i18n import translate
 
@@ -71,6 +72,8 @@ def create_app() -> FastAPI:
     app.add_api_route("/ahbot/save", ahbot_save, methods=["POST"])
     app.add_api_route("/ahbot/reset", ahbot_reset, methods=["POST"])
     app.add_api_route("/playerbots", playerbots, methods=["GET"], response_class=HTMLResponse)
+    app.add_api_route("/playerbots/save", playerbots_save, methods=["POST"])
+    app.add_api_route("/playerbots/reset", playerbots_reset, methods=["POST"])
     app.add_api_route("/logs", logs, methods=["GET"], response_class=HTMLResponse)
     app.add_api_route("/backup", backup, methods=["GET"], response_class=HTMLResponse)
     app.add_api_route("/settings", settings_page, methods=["GET"], response_class=HTMLResponse)
@@ -631,7 +634,89 @@ def playerbots(request: Request, db: Session = Depends(get_db), user: PanelUser 
         error = None
     except Exception as exc:
         stats, error = {}, str(exc)
-    return render(request, "playerbots.html", {"title": "Playerbots", "stats": stats, "error": error}, db)
+    config_error = None
+    path = ""
+    groups = []
+    summary = []
+    try:
+        path, fields = load_playerbot(cfg)
+        groups = grouped_playerbot_fields(fields)
+        summary = summarize_playerbot(fields)
+    except Exception as exc:
+        config_error = str(exc)
+    logs = db.execute(text("""
+        SELECT a.*, u.username
+        FROM audit_log a LEFT JOIN panel_users u ON u.id=a.user_id
+        WHERE a.action LIKE 'playerbot_%'
+        ORDER BY a.id DESC LIMIT 80
+    """)).mappings().all()
+    flash = request.session.pop("playerbot_flash", None)
+    return render(request, "playerbots.html", {
+        "title": "Playerbots",
+        "stats": stats,
+        "error": error,
+        "path": path,
+        "groups": groups,
+        "summary": summary,
+        "config_error": config_error,
+        "logs": logs,
+        "flash": flash,
+    }, db)
+
+
+async def playerbots_save(request: Request, db: Session = Depends(get_db), user: PanelUser = Depends(require_level(3))):
+    form = await request.form()
+    if not verify_csrf(request, form.get("csrf")):
+        raise HTTPException(400, "CSRF")
+    cfg = all_config(db)
+    values = {key: str(value) for key, value in form.items() if key.startswith(("AiPlayerbot.", "AIPlayerbot.", "Playerbots"))}
+    try:
+        restart_delay = max(10, int(str(form.get("restart_delay") or "60")))
+    except ValueError:
+        restart_delay = 60
+    try:
+        path, changes = save_playerbot(cfg, values)
+    except Exception as exc:
+        request.session["playerbot_flash"] = f"Speichern fehlgeschlagen: {exc}"
+        log_action(db, user.id, "playerbot_config_error", "playerbot", str(exc), request.client.host if request.client else None)
+        return RedirectResponse("/playerbots", status_code=303)
+    if changes:
+        details = "\n".join(f"{key}: {old} -> {new}" for key, old, new in changes)
+        log_action(db, user.id, "playerbot_config_change", path, details, request.client.host if request.client else None)
+        notify = f"Playerbot-Konfiguration wurde geändert. Playerbot-Realm startet in {restart_delay} Sekunden neu."
+        try:
+            notify_result = execute_gm_command(db, cfg, "playerbot", f"notify {notify}")
+        except Exception as exc:
+            notify_result = f"Spielerwarnung konnte nicht per SOAP/RA gesendet werden: {exc}"
+        try:
+            restart_result = schedule_realm_restart(cfg, "playerbot", restart_delay)
+        except Exception as exc:
+            restart_result = f"SSH-Neustart konnte nicht geplant werden: {exc}"
+        record_command(db, user.id, "playerbot", f"notify {notify}", notify_result)
+        record_command(db, user.id, "playerbot", f"ssh restart {restart_delay}", restart_result)
+        log_action(db, user.id, "playerbot_apply_restart", "playerbot", f"{notify_result}\n{restart_result}", request.client.host if request.client else None)
+        request.session["playerbot_flash"] = f"{len(changes)} Einstellung(en) gespeichert. {notify_result} {restart_result}"
+    else:
+        request.session["playerbot_flash"] = "Keine Änderungen gefunden."
+    return RedirectResponse("/playerbots", status_code=303)
+
+
+def playerbots_reset(request: Request, db: Session = Depends(get_db), user: PanelUser = Depends(require_level(3)), csrf: str = Form(...), confirm: str = Form("")):
+    if not verify_csrf(request, csrf):
+        raise HTTPException(400, "CSRF")
+    if confirm != "ORIGINAL":
+        request.session["playerbot_flash"] = "Zurücksetzen abgebrochen: Bitte ORIGINAL als Bestätigung eingeben."
+        return RedirectResponse("/playerbots", status_code=303)
+    cfg = all_config(db)
+    try:
+        path, changes, message = reset_playerbot(cfg)
+    except Exception as exc:
+        request.session["playerbot_flash"] = f"Zurücksetzen fehlgeschlagen: {exc}"
+        return RedirectResponse("/playerbots", status_code=303)
+    details = message + ("\n" + "\n".join(f"{key}: {old} -> {new}" for key, old, new in changes) if changes else "")
+    log_action(db, user.id, "playerbot_reset_original", path, details, request.client.host if request.client else None)
+    request.session["playerbot_flash"] = message
+    return RedirectResponse("/playerbots", status_code=303)
 
 
 def logs(request: Request, db: Session = Depends(get_db), user: PanelUser = Depends(require_level(2))):

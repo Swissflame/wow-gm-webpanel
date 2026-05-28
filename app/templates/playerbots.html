@@ -2,12 +2,96 @@
 {% if unavailable %}
 <section class="notice"><strong>{{ _("Feature unavailable") }}</strong><p>Playerbots sind nur im Playerbot-Realm aktiv.</p></section>
 {% else %}
+{% if flash %}<section class="notice"><strong>Playerbots</strong><p>{{ flash }}</p></section>{% endif %}
 {% if error %}<section class="notice"><strong>{{ _("Connection problem") }}</strong><p>{{ error }}</p></section>{% endif %}
-<section class="cards">
-  <div class="card"><span>Bot-/Realm-Charaktere</span><strong>{{ stats.get('characters','?') }}</strong></div>
-  <div class="card"><span>Online</span><strong>{{ stats.get('online','?') }}</strong></div>
-  <div class="card"><span>Bot-Accounts</span><strong>{{ stats.get('accounts','?') }}</strong></div>
+{% if config_error %}<section class="notice"><strong>Playerbot-Config</strong><p>{{ config_error }}</p></section>{% endif %}
+
+<section class="ahbot-page">
+  <section class="cards ahbot-stats">
+    <div class="card"><span>Bot-/Realm-Charaktere</span><strong>{{ stats.get('characters','?') }}</strong></div>
+    <div class="card"><span>Online</span><strong>{{ stats.get('online','?') }}</strong></div>
+    <div class="card"><span>Bot-Accounts</span><strong>{{ stats.get('accounts','?') }}</strong></div>
+    <div class="card"><span>Config-Gruppen</span><strong>{{ groups|length }}</strong></div>
+  </section>
+
+  <section class="panel ahbot-guide">
+    <div>
+      <h2>Playerbot-Tuning: was zuerst wichtig ist</h2>
+      <p>Die Playerbot-Config ist sehr gross. Für den normalen Betrieb sind zuerst Bot-Anzahl, Autologin, KI-Takt, Questverhalten und Chat/Broadcasts entscheidend.</p>
+    </div>
+    <ol>
+      <li><strong>Playerbot-System aktiv</strong>: ohne diesen Hauptschalter arbeitet das Modul nicht.</li>
+      <li><strong>RandomBots automatisch einloggen</strong>: füllt die Welt selbstständig mit Bots.</li>
+      <li><strong>Minimale/Maximale RandomBots</strong>: bestimmt, wie belebt der Realm wirkt und wie viel Last entsteht.</li>
+      <li><strong>KI-Schritte pro Tick</strong> und <strong>Reaktionsverzögerung</strong>: schneller wirkt intelligenter, kostet aber CPU.</li>
+      <li><strong>Bot-Broadcasts</strong>: macht die Welt lebendiger, kann bei zu hohen Chancen aber Chat-Spam erzeugen.</li>
+    </ol>
+    <p class="hint">Empfohlene Arbeitsweise: erst kleine Änderungen speichern, Playerbot-Realm neu starten lassen, dann Serverlast und Botverhalten 10 bis 15 Minuten beobachten.</p>
+  </section>
+
+  <form method="post" action="/playerbots/save" class="ahbot-form">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <section class="panel ahbot-summary">
+      <div>
+        <h2>Aktive Playerbot-Einstellungen</h2>
+        <p class="hint">{{ path }}</p>
+        <ul>{% for line in summary %}<li>{{ line }}</li>{% endfor %}</ul>
+      </div>
+      {% if user.gm_level >= 3 %}
+      <div class="apply-box">
+        <label>Neustart in Sekunden<input name="restart_delay" type="number" min="10" value="60"></label>
+        <button class="primary">Einstellungen speichern & Playerbot-Realm neu starten</button>
+      </div>
+      {% endif %}
+    </section>
+
+    <section class="ahbot-tabs">
+      {% for group in groups %}
+      <details class="panel ahbot-group" {% if loop.first %}open{% endif %}>
+        <summary>{{ group["label"] }} <span>{{ group["count"] }}</span></summary>
+        {% if group["important"] %}
+        <h3>Wichtige Einstellungen</h3>
+        <div class="ahbot-fields">
+          {% for field in group["important"] %}
+          {% include "partials/playerbot_field.html" %}
+          {% endfor %}
+        </div>
+        {% endif %}
+        {% if group["advanced"] %}
+        <details class="nested-options" {% if not group["important"] %}open{% endif %}>
+          <summary>Weitere Optionen anzeigen <span>{{ group["advanced"]|length }}</span></summary>
+          <div class="ahbot-fields">
+            {% for field in group["advanced"] %}
+            {% include "partials/playerbot_field.html" %}
+            {% endfor %}
+          </div>
+        </details>
+        {% endif %}
+      </details>
+      {% endfor %}
+    </section>
+  </form>
+
+  {% if user.gm_level >= 3 %}
+  <form method="post" action="/playerbots/reset" class="panel ahbot-reset danger">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <h2>Alles auf Originaleinstellung zurücksetzen</h2>
+    <p>Erstellt zuerst ein Backup der aktuellen <code>playerbots.conf</code>. Wenn eine <code>.dist</code>-Datei vorhanden ist, wird diese wiederhergestellt; sonst werden dokumentierte Defaults gesetzt. Es werden keine WoW-Datenbanken gelöscht.</p>
+    <label>Zur Bestätigung ORIGINAL eingeben<input name="confirm" autocomplete="off" required></label>
+    <button class="danger-button">Playerbots auf Originaleinstellung zurücksetzen</button>
+  </form>
+  {% endif %}
+
+  <section class="panel">
+    <h2>Playerbot-Änderungslog</h2>
+    <table class="inner-table">
+      <tr><th>Zeit</th><th>Benutzer</th><th>Aktion</th><th>Datei/Realm</th><th>Änderungen</th></tr>
+      {% for row in logs %}
+      <tr><td>{{ row.created_at }}</td><td>{{ row.username }}</td><td>{{ row.action }}</td><td>{{ row.target }}</td><td><small>{{ row.detail }}</small></td></tr>
+      {% endfor %}
+    </table>
+    {% if not logs %}<p>Noch keine Playerbot-Änderungen protokolliert.</p>{% endif %}
+  </section>
 </section>
-<section class="panel"><h2>Kommandos & Hinweise</h2><div class="chips"><span>bot add</span><span>bot remove</span><span>bot command</span><span>rndbot reset</span><span>rndbot stats</span></div><p>Playerbot-Konfigurationen findest du unter Configs im Thema Playerbots. Restarts und Crash-Hinweise werden im Audit-Log sichtbar.</p></section>
 {% endif %}
 {% endblock %}

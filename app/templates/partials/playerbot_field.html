@@ -1,0 +1,17 @@
+<label class="ahbot-field">
+  <span>{{ field.label }}</span>
+  {% if field.type == "boolean" %}
+  <select name="{{ field.key }}" {% if user.gm_level < 3 %}disabled{% endif %}>
+    <option value="0" {% if field.value in ["0","false","False","no","No"] %}selected{% endif %}>Nein / deaktiviert</option>
+    <option value="1" {% if field.value in ["1","true","True","yes","Yes"] %}selected{% endif %}>Ja / aktiviert</option>
+  </select>
+  {% elif field.type == "number" %}
+  <input name="{{ field.key }}" type="number" step="any" value="{{ field.value }}" {% if user.gm_level < 3 %}disabled{% endif %}>
+  {% elif field.type == "password" %}
+  <input name="{{ field.key }}" type="password" value="********" autocomplete="new-password" {% if user.gm_level < 3 %}disabled{% endif %}>
+  {% else %}
+  <input name="{{ field.key }}" value="{{ field.value }}" {% if user.gm_level < 3 %}disabled{% endif %}>
+  {% endif %}
+  <small>{{ field.description }}</small>
+  <em>Key: {{ field.key }}{% if field.default is not none %} · Original/Default: {{ field.default }}{% endif %}</em>
+</label>

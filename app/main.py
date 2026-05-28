@@ -597,6 +597,18 @@ def collect_sensitive_server_info(cfg: dict) -> list[dict]:
             ("Benutzer", cfg["gm_transport"].get("username")),
             ("Passwort", cfg["gm_transport"].get("password")),
         ]},
+        {"title": "SOAP CMS", "rows": [
+            ("Zweck", "Externer CMS-/FusionCMS-Zugriff auf AzerothCore SOAP"),
+            ("Benutzer", (cfg.get("soap_cms") or {}).get("username") or "nicht eingerichtet"),
+            ("Passwort", (cfg.get("soap_cms") or {}).get("password") or "nicht eingerichtet"),
+            ("Account-ID", (cfg.get("soap_cms") or {}).get("account_id") or "unbekannt"),
+            ("GM-Level", (cfg.get("soap_cms") or {}).get("gm_level") or "3 empfohlen"),
+            ("Auth-Datenbank", (cfg.get("soap_cms") or {}).get("auth_db") or cfg["mysql"].get("auth_db")),
+            ("Normal-Realm SOAP", f"{(cfg.get('soap_cms') or {}).get('normal_host') or cfg['gm_transport'].get('normal_host')}:{(cfg.get('soap_cms') or {}).get('normal_port') or cfg['gm_transport'].get('normal_port')}"),
+            ("Playerbot-Realm SOAP", f"{(cfg.get('soap_cms') or {}).get('playerbot_host') or cfg['gm_transport'].get('playerbot_host')}:{(cfg.get('soap_cms') or {}).get('playerbot_port') or cfg['gm_transport'].get('playerbot_port')}"),
+            ("Ein Account oder zwei?", "Ein Account reicht, weil beide Worldserver dieselbe acore_auth-Datenbank verwenden."),
+            ("Unterschiedliche Ports?", "Ja. Jeder Worldserver hat seinen eigenen SOAP-Port."),
+        ]},
         {"title": "Config-Dateien", "rows": [
             ("Authserver", f"{cfg['server'].get('normal_path')}/etc/authserver.conf"),
             ("Worldserver Normal", f"{cfg['server'].get('normal_path')}/etc/worldserver.conf"),

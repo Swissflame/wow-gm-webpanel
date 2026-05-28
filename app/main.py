@@ -606,6 +606,7 @@ def collect_sensitive_server_info(cfg: dict) -> list[dict]:
             ("AHBot Playerbot", f"{cfg['server'].get('playerbot_path')}/etc/modules/mod_ahbot.conf"),
         ]},
     ]
+    sections.extend(remote_wow_config_connection_sections(cfg))
     try:
         sections.append({"title": "Webpanel-Server lokal erkannt", "text": local_sensitive_system_info()})
     except Exception as exc:
@@ -634,6 +635,75 @@ getent passwd klaus wowpanel acore 2>/dev/null || true
     except Exception as exc:
         sections.append({"title": "Vom WoW-Server erkannt", "text": f"SSH-Abfrage fehlgeschlagen: {exc}"})
     return sections
+
+
+def remote_wow_config_connection_sections(cfg: dict) -> list[dict]:
+    paths = [
+        ("Normal Authserver", f"{cfg['server'].get('normal_path')}/etc/authserver.conf"),
+        ("Normal Worldserver", f"{cfg['server'].get('normal_path')}/etc/worldserver.conf"),
+        ("Normal AHBot", f"{cfg['server'].get('normal_path')}/etc/modules/mod_ahbot.conf"),
+        ("Playerbot Authserver", f"{cfg['server'].get('playerbot_path')}/etc/authserver.conf"),
+        ("Playerbot Worldserver", f"{cfg['server'].get('playerbot_path')}/etc/worldserver.conf"),
+        ("Playerbots", f"{cfg['server'].get('playerbot_path')}/etc/modules/playerbots.conf"),
+        ("Playerbot AHBot", f"{cfg['server'].get('playerbot_path')}/etc/modules/mod_ahbot.conf"),
+    ]
+    grep = r"grep -nE '^[[:space:]]*([A-Za-z0-9_.]+DatabaseInfo|WorldServerPort|SOAP\\.|Ra\\.|AuctionHouseBot\\.(Account|GUID)|AiPlayerbot\\.CommandServerPort)[[:space:]]*='"
+    command_lines = []
+    for label, path in paths:
+        command_lines.append(f"echo '__FILE__ {shell_escape(label)}|{shell_escape(path)}'")
+        command_lines.append(f"if test -f {shell_escape(path)}; then {grep} {shell_escape(path)} || true; else echo 'FEHLT'; fi")
+    try:
+        code, out, err = SSHClient(cfg["server"]).run("\n".join(command_lines), timeout=12)
+        parsed = parse_remote_config_connections(out if code == 0 else out + err)
+        raw_text = out if code == 0 else out + err
+    except Exception as exc:
+        parsed = []
+        raw_text = f"SSH-Abfrage fehlgeschlagen: {exc}"
+    sections = []
+    if parsed:
+        for file_info in parsed:
+            sections.append({"title": f"WoW-Config: {file_info['label']}", "rows": file_info["rows"]})
+    sections.append({"title": "WoW-Config: rohe Verbindungs-/Portzeilen", "text": raw_text})
+    return sections
+
+
+def shell_escape(value: str) -> str:
+    return "'" + value.replace("'", "'\"'\"'") + "'"
+
+
+def parse_remote_config_connections(text_value: str) -> list[dict]:
+    result = []
+    current = None
+    for raw_line in text_value.splitlines():
+        if raw_line.startswith("__FILE__ "):
+            meta = raw_line[len("__FILE__ "):]
+            label, _, path = meta.partition("|")
+            current = {"label": label, "path": path, "rows": [("Datei", path)]}
+            result.append(current)
+            continue
+        if not current or not raw_line.strip() or raw_line.strip() == "FEHLT":
+            if current and raw_line.strip() == "FEHLT":
+                current["rows"].append(("Status", "Datei fehlt"))
+            continue
+        _, _, setting = raw_line.partition(":")
+        key, sep, value = setting.partition("=")
+        if not sep:
+            current["rows"].append(("Rohzeile", setting.strip()))
+            continue
+        key = key.strip()
+        value = value.strip().strip('"')
+        current["rows"].append((key, value))
+        if key.endswith("DatabaseInfo"):
+            parts = value.split(";")
+            if len(parts) >= 5:
+                current["rows"].extend([
+                    (f"{key} Host", parts[0]),
+                    (f"{key} Port", parts[1]),
+                    (f"{key} Benutzer", parts[2]),
+                    (f"{key} Passwort", parts[3]),
+                    (f"{key} Datenbank", parts[4]),
+                ])
+    return result
 
 
 def local_sensitive_system_info() -> str:

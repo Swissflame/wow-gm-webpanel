@@ -44,6 +44,15 @@ def account_by_username(mysql_cfg: dict, auth_db: str, username: str) -> dict | 
     return result[0] if result else None
 
 
+def account_by_id_for_login(mysql_cfg: dict, auth_db: str, account_id: int) -> dict | None:
+    columns = account_table_columns(mysql_cfg, auth_db)
+    wanted = ["id", "username", "sha_pass_hash", "salt", "verifier", "email", "last_ip", "last_login", "locked", "online", "expansion"]
+    selected = [name for name in wanted if name in columns]
+    sql = f"SELECT {', '.join(selected)} FROM account WHERE id = :id LIMIT 1"
+    result = rows(mysql_cfg, auth_db, sql, {"id": int(account_id)})
+    return result[0] if result else None
+
+
 def gm_level(mysql_cfg: dict, auth_db: str, account_id: int) -> int:
     value = scalar(mysql_cfg, auth_db, "SELECT COALESCE(MAX(gmlevel), 0) FROM account_access WHERE id=:id", {"id": account_id})
     return int(value or 0)

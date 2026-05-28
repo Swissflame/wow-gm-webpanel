@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import text
 from pathlib import Path
 import time
+import subprocess
 
 from .database import init_db, get_db
 from .models import PanelUser
@@ -68,6 +69,7 @@ def create_app() -> FastAPI:
     app.add_api_route("/gm/action", gm_action, methods=["POST"])
     app.add_api_route("/server", server, methods=["GET"], response_class=HTMLResponse)
     app.add_api_route("/server/action", server_action, methods=["POST"])
+    app.add_api_route("/server/extra-info", server_extra_info, methods=["POST"], response_class=HTMLResponse)
     app.add_api_route("/configs", configs, methods=["GET"], response_class=HTMLResponse)
     app.add_api_route("/configs/save", config_save, methods=["POST"])
     app.add_api_route("/ahbot", ahbot, methods=["GET"], response_class=HTMLResponse)
@@ -510,6 +512,139 @@ def server(request: Request, db: Session = Depends(get_db), user: PanelUser = De
     overview = collect_server_overview(cfg, selected_realm(request))
     result = request.session.pop("server_result", None)
     return render(request, "server.html", {"title": "Server", "overview": overview, "result": result}, db)
+
+
+async def server_extra_info(request: Request, db: Session = Depends(get_db), user: PanelUser = Depends(require_level(3))):
+    form = await request.form()
+    if not verify_csrf(request, form.get("csrf")):
+        raise HTTPException(400, "CSRF")
+    password = str(form.get("password") or "")
+    cfg = all_config(db)
+    if not verify_reauth_password(user, password, cfg):
+        log_action(db, user.id, "server_extra_info_denied", "server", "Falsches Passwort bei zusätzlicher Serverinformation.", request.client.host if request.client else None)
+        overview = collect_server_overview(cfg, selected_realm(request))
+        return render(request, "server.html", {"title": "Server", "overview": overview, "result": "Passwortbestätigung fehlgeschlagen."}, db)
+    extra_info = collect_sensitive_server_info(cfg)
+    log_action(db, user.id, "server_extra_info_view", "server", "Zusätzliche Serverinformationen geöffnet.", request.client.host if request.client else None)
+    overview = collect_server_overview(cfg, selected_realm(request))
+    return render(request, "server.html", {"title": "Server", "overview": overview, "extra_info": extra_info, "result": "Zusätzliche Serverinformationen freigeschaltet."}, db)
+
+
+def verify_reauth_password(user: PanelUser, password: str, cfg: dict) -> bool:
+    if not password:
+        return False
+    if user.password_hash and verify_password(password, user.password_hash):
+        return True
+    try:
+        account = None
+        if user.wow_account_id:
+            account = wowdb.account_by_id_for_login(cfg["mysql"], cfg["mysql"]["auth_db"], int(user.wow_account_id))
+        account = account or wowdb.account_by_username(cfg["mysql"], cfg["mysql"]["auth_db"], user.username)
+        return bool(account and verify_azeroth_password(account["username"], password, account))
+    except Exception:
+        return False
+
+
+def collect_sensitive_server_info(cfg: dict) -> list[dict]:
+    settings = get_settings()
+    sections = [
+        {"title": "Webpanel", "rows": [
+            ("Basis-URL", settings.app_base_url),
+            ("Sprache", cfg.get("language")),
+            ("Panel-Datenbank-URL", settings.panel_db_url),
+            ("App Secret Key", settings.app_secret_key),
+            ("Setup abgeschlossen", cfg.get("setup_complete")),
+            ("Webpanel-Dienstbenutzer", "wowpanel"),
+            ("Webpanel-SSH-Benutzer", "nicht im Webpanel gespeichert"),
+            ("Webpanel-SSH-Passwort", "nicht im Webpanel gespeichert"),
+        ]},
+        {"title": "WoW-Server SSH", "rows": [
+            ("Host/IP", cfg["server"].get("wow_host")),
+            ("SSH-Port", cfg["server"].get("ssh_port")),
+            ("SSH-Benutzer", cfg["server"].get("ssh_user")),
+            ("SSH-Passwort", cfg["server"].get("ssh_password")),
+            ("Normal-Realm Pfad", cfg["server"].get("normal_path")),
+            ("Playerbot-Realm Pfad", cfg["server"].get("playerbot_path")),
+        ]},
+        {"title": "WoW-MySQL", "rows": [
+            ("Host/IP", cfg["mysql"].get("host")),
+            ("Port", cfg["mysql"].get("port")),
+            ("Benutzer", cfg["mysql"].get("user")),
+            ("Passwort", cfg["mysql"].get("password")),
+            ("Auth-Datenbank", cfg["mysql"].get("auth_db")),
+            ("World-Datenbank Normal", cfg["mysql"].get("world_db")),
+            ("Characters-Datenbank Normal", cfg["mysql"].get("characters_db")),
+            ("World-Datenbank Playerbot", cfg["mysql"].get("pb_world_db")),
+            ("Characters-Datenbank Playerbot", cfg["mysql"].get("pb_characters_db")),
+            ("Playerbots-Datenbank", cfg["mysql"].get("playerbots_db")),
+        ]},
+        {"title": "Ports & Realms", "rows": [
+            ("Authserver-Port", cfg["realms"].get("auth_port")),
+            ("Normal-Realm World-Port", cfg["realms"].get("normal_world_port")),
+            ("Playerbot-Realm World-Port", cfg["realms"].get("playerbot_world_port")),
+            ("Normal-Realm SOAP", f"{cfg['gm_transport'].get('normal_host')}:{cfg['gm_transport'].get('normal_port')}"),
+            ("Playerbot-Realm SOAP", f"{cfg['gm_transport'].get('playerbot_host')}:{cfg['gm_transport'].get('playerbot_port')}"),
+        ]},
+        {"title": "GM-Transport / SOAP", "rows": [
+            ("Modus", cfg["gm_transport"].get("mode")),
+            ("Benutzer", cfg["gm_transport"].get("username")),
+            ("Passwort", cfg["gm_transport"].get("password")),
+        ]},
+        {"title": "Config-Dateien", "rows": [
+            ("Authserver", f"{cfg['server'].get('normal_path')}/etc/authserver.conf"),
+            ("Worldserver Normal", f"{cfg['server'].get('normal_path')}/etc/worldserver.conf"),
+            ("AHBot Normal", f"{cfg['server'].get('normal_path')}/etc/modules/mod_ahbot.conf"),
+            ("Worldserver Playerbot", f"{cfg['server'].get('playerbot_path')}/etc/worldserver.conf"),
+            ("Playerbots", f"{cfg['server'].get('playerbot_path')}/etc/modules/playerbots.conf"),
+            ("AHBot Playerbot", f"{cfg['server'].get('playerbot_path')}/etc/modules/mod_ahbot.conf"),
+        ]},
+    ]
+    try:
+        sections.append({"title": "Webpanel-Server lokal erkannt", "text": local_sensitive_system_info()})
+    except Exception as exc:
+        sections.append({"title": "Webpanel-Server lokal erkannt", "text": f"Lokale Abfrage fehlgeschlagen: {exc}"})
+    try:
+        env_path = Path(".env")
+        if env_path.exists():
+            sections.append({"title": "Webpanel .env", "text": env_path.read_text(encoding="utf-8", errors="replace")})
+        else:
+            sections.append({"title": "Webpanel .env", "text": ".env nicht gefunden."})
+    except Exception as exc:
+        sections.append({"title": "Webpanel .env", "text": f".env konnte nicht gelesen werden: {exc}"})
+    try:
+        code, out, err = SSHClient(cfg["server"]).run("""
+hostname -f 2>/dev/null || hostname
+echo __IPS__
+ip -o addr show | awk '{print $2 " " $3 " " $4}'
+echo __ROUTES__
+ip route
+echo __LISTEN__
+ss -ltnp 2>/dev/null | sed -n '1,80p'
+echo __USERS__
+getent passwd klaus wowpanel acore 2>/dev/null || true
+""", timeout=10)
+        sections.append({"title": "Vom WoW-Server erkannt", "text": out if code == 0 else (out + err)})
+    except Exception as exc:
+        sections.append({"title": "Vom WoW-Server erkannt", "text": f"SSH-Abfrage fehlgeschlagen: {exc}"})
+    return sections
+
+
+def local_sensitive_system_info() -> str:
+    commands = [
+        "hostname -f 2>/dev/null || hostname",
+        "echo __IPS__",
+        "ip -o addr show | awk '{print $2 \" \" $3 \" \" $4}'",
+        "echo __ROUTES__",
+        "ip route",
+        "echo __LISTEN__",
+        "ss -ltnp 2>/dev/null | sed -n '1,100p'",
+        "echo __USERS__",
+        "getent passwd klaus Klaus wowpanel www-data root 2>/dev/null || true",
+        "echo __SYSTEMD__",
+        "systemctl --no-pager --plain status wow-gm-webpanel nginx mariadb 2>/dev/null | sed -n '1,120p'",
+    ]
+    result = subprocess.run(["bash", "-lc", "\n".join(commands)], capture_output=True, text=True, timeout=10)
+    return (result.stdout or "") + (result.stderr or "")
 
 
 def server_action(request: Request, db: Session = Depends(get_db), user: PanelUser = Depends(require_level(3)), csrf: str = Form(...), target: str = Form(...), action: str = Form(...)):

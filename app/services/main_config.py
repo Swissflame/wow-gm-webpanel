@@ -120,6 +120,200 @@ FORCE_BOOLEAN_KEYS = {
     "Respawn.DynamicEscortNPC", "Respawn.ForceCompatibilityMode",
 }
 
+DIRECT_LABELS = {
+    "MaxPingTime": "Datenbank-Ping-Intervall",
+    "EnableProxyProtocol": "Proxy-Protokoll aktiv",
+    "PidFile": "PID-Datei",
+    "UseProcessors": "CPU-Kernmaske",
+    "ProcessPriority": "Prozessprioritaet",
+    "RealmsStateUpdateDelay": "Realmstatus-Aktualisierung",
+    "WrongPass.MaxCount": "Falsches Passwort: maximale Versuche",
+    "WrongPass.BanTime": "Falsches Passwort: Sperrdauer",
+    "WrongPass.BanType": "Falsches Passwort: Sperrart",
+    "WrongPass.Logging": "Falsche Passwoerter protokollieren",
+    "BanExpiryCheckInterval": "Abgelaufene Sperren pruefen",
+    "StrictVersionCheck": "Clientversion streng pruefen",
+    "SourceDirectory": "Quellcode-Verzeichnis",
+    "MySQLExecutable": "MySQL-Programm",
+    "TempDir": "Temporaeres Verzeichnis",
+    "IPLocationFile": "IP-Standortdatei",
+    "AllowLoggingIPAddressesInDatabase": "IP-Adressen in der Datenbank loggen",
+    "EnableTOTP": "Zwei-Faktor-Login aktiv",
+    "TOTPMasterSecret": "TOTP-Hauptschluessel",
+    "Console.Enable": "Serverkonsole aktiv",
+    "BeepAtStart": "Signalton nach Start",
+    "FlashAtStart": "Fenster blinkt nach Start",
+    "ThreadPool": "Allgemeine Thread-Anzahl",
+    "Compression": "Paket-Kompression",
+    "PacketLogFile": "Paketlog-Datei",
+    "RecordUpdateTimeDiffInterval": "Updatezeit-Logintervall",
+    "MinRecordUpdateTimeDiff": "Mindestwert fuer Updatezeit-Log",
+    "World.RealmAvailability": "Realm verfuegbar",
+    "RealmZone": "Realm-Zone",
+    "DBC.Locale": "DBC-Sprache",
+    "ClientCacheVersion": "Clientcache-Version",
+    "SessionAddDelay": "Sitzung hinzufuegen: Verzoegerung",
+    "CloseIdleConnections": "Inaktive Verbindungen schliessen",
+    "SocketTimeOutTime": "Socket-Timeout",
+    "SocketTimeOutTimeActive": "Aktiver Socket-Timeout",
+    "MaxOverspeedPings": "Maximale Overspeed-Pings",
+    "DisconnectToleranceInterval": "Reconnect-Toleranz nach Disconnect",
+    "EnableLoginAfterDC": "Login nach Verbindungsabbruch erlauben",
+    "MinWorldUpdateTime": "Minimale Welt-Tickzeit",
+    "UpdateUptimeInterval": "Uptime-Aktualisierung",
+    "MaxCoreStuckTime": "Freeze-Erkennung",
+    "SaveRespawnTimeImmediately": "Respawnzeit sofort speichern",
+    "Server.LoginInfo": "Login-Info im Chat",
+    "ShowKickInWorld": "Kick-Meldungen weltweit anzeigen",
+    "ShowMuteInWorld": "Mute-Meldungen weltweit anzeigen",
+    "ShowBanInWorld": "Bann-Meldungen weltweit anzeigen",
+    "PreventAFKLogout": "AFK-Logout verhindern",
+    "PacketSpoof.BanMode": "Paketfaelschung: Bannmodus",
+    "PacketSpoof.BanDuration": "Paketfaelschung: Banndauer",
+    "DetectPosCollision": "Positionskollision erkennen",
+    "CheckGameObjectLoS": "Sichtlinie fuer Spielobjekte pruefen",
+    "PreloadAllNonInstancedMapGrids": "Offene Kartenbereiche vorladen",
+    "DontCacheRandomMovementPaths": "Zufaellige Bewegungswege nicht cachen",
+    "DisableWaterBreath": "Unterwasseratmung deaktivieren",
+    "AllFlightPaths": "Alle Flugpunkte freischalten",
+    "InstantFlightPaths": "Flugreisen sofort abschliessen",
+    "AlwaysMaxSkillForLevel": "Fertigkeiten immer auf Levelmaximum",
+    "AlwaysMaxWeaponSkill": "Waffenfertigkeit immer maximal",
+    "PlayerStart.AllReputation": "Start-Rufwerte vergeben",
+    "PlayerStart.CustomSpells": "Eigene Startzauber vergeben",
+    "PlayerStart.MapsExplored": "Karten fuer neue Charaktere aufdecken",
+    "PlayerSave.Stats.SaveOnlyOnLogout": "Spielerstatistiken nur beim Ausloggen speichern",
+    "ValidateSkillLearnedBySpells": "Skills gegen gelernte Zauber pruefen",
+    "DeclinedNames": "Deklination von Namen aktiv",
+    "StrictNames.Reserved": "Reservierte Namen streng pruefen",
+    "StrictNames.Profanity": "Schimpfwoerter in Namen pruefen",
+    "EnablePlayerSettings": "Spielereinstellungen speichern",
+    "EnableLowLevelRegenBoost": "Regenerationsbonus fuer niedrige Level",
+    "SpellQueue.Enabled": "Zauberwarteschlange aktiv",
+    "SkillChance.MiningSteps": "Bergbau: Skill-Stufen nutzen",
+    "SkillChance.SkinningSteps": "Kuerchnerei: Skill-Stufen nutzen",
+    "OffhandCheckAtSpellUnlearn": "Nebenhand nach Zauberverlust pruefen",
+    "Stats.Limits.Enable": "Wertelimits aktiv",
+    "PvPToken.Enable": "PvP-Marken aktiv",
+    "Death.Bones.World": "Knochen in der Welt erzeugen",
+    "Death.Bones.BattlegroundOrArena": "Knochen in BG/Arena erzeugen",
+    "ItemDelete.Vendor": "Haendleritems automatisch loeschen",
+    "Creature.RepositionAgainstNpcs": "Kreaturen gegen NPCs neu positionieren",
+    "LeaveGroupOnLogout.Enabled": "Gruppe beim Ausloggen verlassen",
+    "Instance.GMSummonPlayer": "GM-Beschwoerung in Instanzen erlauben",
+    "Instance.IgnoreLevel": "Instanz-Levelgrenzen ignorieren",
+    "Instance.IgnoreRaid": "Raid-Bedingung fuer Instanzen ignorieren",
+    "Instance.SharedNormalHeroicId": "Normale und heroische ID teilen",
+    "JoinBGAndLFG.Enable": "BG und Dungeonfinder gleichzeitig erlauben",
+    "LFG.MailItemOnFullInventory": "Dungeonfinder-Beute per Post senden",
+    "LFG.Location.All": "Dungeonfinder von ueberall erlauben",
+    "DungeonFinder.CastDeserter": "Dungeon-Deserteur anwenden",
+    "DungeonFinder.AllowCompleted": "Abgeschlossene Dungeons erlauben",
+    "DungeonAccessRequirements.PortalAvgIlevelCheck": "Portalzugang: Gegenstandsstufe pruefen",
+    "DungeonAccessRequirements.PrintMode": "Dungeonzugang: Ausgabemodus",
+    "DungeonAccessRequirements.OptionalStringID": "Dungeonzugang: optionaler Text",
+    "Wintergrasp.Enable": "Tausendwinter aktiv",
+    "Wintergrasp.KickVoAPlayers": "AK-Spieler nach Tausendwinter kicken",
+    "Battleground.CastDeserter": "Schlachtfeld-Deserteur anwenden",
+    "Battleground.QueueAnnouncer.Enable": "Schlachtfeld-Warteschlange ansagen",
+    "Battleground.QueueAnnouncer.Timed": "Schlachtfeld-Ansage wiederholen",
+    "Battleground.GiveXPForKills": "XP fuer Kills im Schlachtfeld",
+    "Battleground.StoreStatistics.Enable": "Schlachtfeldstatistiken speichern",
+    "Battleground.TrackDeserters.Enable": "Schlachtfeld-Deserteure verfolgen",
+    "Battleground.DisableQuestShareInBG": "Questteilen im Schlachtfeld sperren",
+    "Battleground.DisableReadyCheckInBG": "Bereitschaftscheck im Schlachtfeld sperren",
+    "Arena.AutoDistributePoints": "Arenapunkte automatisch verteilen",
+    "Arena.QueueAnnouncer.Enable": "Arena-Warteschlange ansagen",
+    "Guild.AllowMultipleGuildMaster": "Mehrere Gildenmeister erlauben",
+    "AddonChannel": "Addon-Kanal erlauben",
+    "ChatFakeMessagePreventing": "Gefakte Chatnachrichten verhindern",
+    "Chat.MuteFirstLogin": "Neue Accounts beim ersten Login stummschalten",
+    "Channel.RestrictedLfg": "SucheNachGruppe-Kanal beschraenken",
+    "Channel.SilentlyGMJoin": "GM-Kanalbeitritt verbergen",
+    "PreserveCustomChannels": "Eigene Kanaele erhalten",
+    "TalentsInspecting": "Talente beim Inspizieren anzeigen",
+    "Event.Announce": "Events im Chat ankuendigen",
+    "PlayerDump.DisallowPaths": "PlayerDump-Pfade verbieten",
+    "PlayerDump.DisallowOverwrite": "PlayerDump-Ueberschreiben verbieten",
+    "WipeGunshipBlizzlike.Enable": "Kanonenboot-Wipe blizzlike",
+    "Minigob.Manabonk.Enable": "Minigob Manabonk aktiv",
+    "Calculate.Creature.Zone.Area.Data": "Kreatur-Zonen-/Gebietsdaten berechnen",
+    "Calculate.Gameoject.Zone.Area.Data": "Spielobjekt-Zonen-/Gebietsdaten berechnen",
+    "MunchingBlizzlike.Enabled": "Aura-Munching blizzlike",
+    "Daze.Enabled": "Benommenheit aktiv",
+    "InfiniteAmmo.Enabled": "Unendliche Munition aktiv",
+}
+
+DIRECT_DESCRIPTIONS = {
+    "MaxPingTime": "Intervall, in dem der Server seine Datenbankverbindung aktiv haelt. Ein kleinerer Wert erkennt Verbindungsprobleme schneller, erzeugt aber mehr regelmaessige Datenbankabfragen. Ein zu hoher Wert kann dazu fuehren, dass kaputte Verbindungen spaeter bemerkt werden.",
+    "EnableProxyProtocol": "Aktiviert das PROXY-Protokoll fuer vorgeschaltete Loadbalancer oder Reverse Proxies. Nur einschalten, wenn ein Proxy dieses Protokoll wirklich sendet; sonst koennen normale Verbindungen fehlschlagen.",
+    "PidFile": "Pfad zur Datei, in die der Prozess seine Prozess-ID schreibt. Das hilft Init-Systemen und Wartungsskripten. Ein falscher oder nicht beschreibbarer Pfad kann Start-/Stop-Skripte stoeren.",
+    "UseProcessors": "CPU-Kernmaske fuer den Serverprozess. Damit kann der Prozess auf bestimmte Kerne begrenzt werden. Auf normalen Servern meist unveraendert lassen; falsche Masken koennen Leistung verschlechtern.",
+    "ProcessPriority": "Prioritaet des Serverprozesses im Betriebssystem. Hoehere Prioritaet kann den Worldserver bevorzugen, kann aber andere Dienste auf dem Container ausbremsen.",
+    "WrongPass.MaxCount": "Anzahl falscher Loginversuche, bevor eine Sperraktion greift. Niedriger schuetzt staerker gegen Brute-Force, kann echte Spieler bei Tippfehlern aber schneller aussperren.",
+    "WrongPass.BanTime": "Dauer der Sperre nach zu vielen falschen Passwoertern. Hoeher bremst Angriffe staerker, kann betroffene Spieler aber laenger blockieren.",
+    "WrongPass.BanType": "Legt fest, ob nach falschen Passwoertern Account oder IP gesperrt werden. IP-Sperren treffen bei gemeinsamem Netzwerk eventuell mehrere Spieler.",
+    "WrongPass.Logging": "Schreibt falsche Loginversuche ins Log. Hilft beim Erkennen von Angriffen oder vertippten Accounts, erzeugt aber mehr Logeintraege.",
+    "StrictVersionCheck": "Prueft die Clientversion strenger. Aktiviert ist sicherer und sauberer fuer 3.3.5a; falsch konfigurierte Clients kommen dann nicht mehr hinein.",
+    "AllowLoggingIPAddressesInDatabase": "Speichert IP-Adressen in der Datenbank. Hilft bei Administration und Missbrauchsanalyse, ist aber datenschutzrelevant.",
+    "EnableTOTP": "Aktiviert Zwei-Faktor-Login ueber TOTP, sofern Accounts und Clientprozess dies unterstuetzen. Erhoeht Sicherheit, macht Login aber anspruchsvoller.",
+    "TOTPMasterSecret": "Hauptschluessel fuer TOTP-Funktionen. Sehr sensibel: nicht teilen, nicht committen und nur aendern, wenn du weisst, wie bestehende TOTP-Daten betroffen sind.",
+    "Console.Enable": "Aktiviert die lokale Serverkonsole. Nuetzlich fuer direkte Administration am Serverprozess; auf Headless-Diensten meist nur relevant, wenn die Konsole gezielt genutzt wird.",
+    "Compression": "Kompressionsstufe fuer Netzwerkpakete. Hoehere Werte sparen Bandbreite, koennen aber CPU kosten. Zu niedrige Werte sind leichter fuer CPU, brauchen mehr Netzwerk.",
+    "PacketLogFile": "Datei fuer Paketmitschnitte. Nur zur Fehlersuche aktiv nutzen, da Paketlogs sehr gross werden und sensible Spiel-/Accountablaeufe enthalten koennen.",
+    "World.RealmAvailability": "Steuert, ob der Realm als verfuegbar gemeldet wird. Deaktiviert kann Spieler am Betreten hindern oder den Realm als nicht verfuegbar erscheinen lassen.",
+    "RealmZone": "Region/Zeitzonenkennung des Realms fuer Client- und Realmlistenverhalten. Falsch gesetzte Werte sind meist nicht kritisch, koennen aber Anzeige und Sortierung beeinflussen.",
+    "DBC.Locale": "Sprache/Locale fuer DBC-Daten. Beeinflusst, welche lokalisierten Clientdaten der Server nutzt. Falsch gesetzt koennen Namen oder Texte ungewohnt erscheinen.",
+    "ClientCacheVersion": "Version fuer den Clientcache. Erhoehen zwingt Clients indirekt dazu, Cache-Daten neu zu laden. Praktisch nach Datenbank-/DBC-Aenderungen, aber nicht dauernd noetig.",
+    "CloseIdleConnections": "Schliesst inaktive Datenbank- oder Netzwerkverbindungen. Aktiviert hilft gegen haengende Verbindungen; zu aggressiv kann bei kurzer Inaktivitaet mehr Reconnects erzeugen.",
+    "EnableLoginAfterDC": "Erlaubt schnelleren Login nach Verbindungsabbruch. Komfortabel fuer Spieler mit instabiler Verbindung; zu locker kann Ghost-Session-Probleme kaschieren.",
+    "MaxCoreStuckTime": "Zeitgrenze fuer die Erkennung eines haengenden Serverkerns. Ist der Worldserver laenger blockiert, kann dies Diagnose oder Schutzreaktionen ausloesen.",
+    "SaveRespawnTimeImmediately": "Speichert Respawnzeiten sofort nach Aenderung. Sicherer bei Abstuerzen, erzeugt aber mehr Datenbankzugriffe bei vielen Kills oder dynamischem Respawn.",
+    "PreventAFKLogout": "Verhindert automatisches Ausloggen in AFK-Situationen. Bequem fuer private Server, kann aber viele inaktive Charaktere online halten.",
+    "DetectPosCollision": "Prueft Positionskollisionen in der Welt. Aktiviert ist genauer gegen falsche Positionen; deaktiviert spart etwas Rechenarbeit, kann aber Positionierungsfehler zulassen.",
+    "CheckGameObjectLoS": "Prueft Sichtlinie zu Spielobjekten. Aktiviert verhindert Interaktion durch Waende oder Geometrie; deaktiviert ist weniger realistisch, aber etwas leichter.",
+    "PreloadAllNonInstancedMapGrids": "Laedt offene Kartenbereiche beim Start vor. Das kann Ruckler beim ersten Betreten reduzieren, erhoeht aber Startzeit und RAM-Verbrauch.",
+    "DontCacheRandomMovementPaths": "Speichert zufaellige Bewegungswege nicht zwischen. Spart Cache-Speicher, kann aber mehr Pfadberechnung erzeugen.",
+    "DisableWaterBreath": "Schaltet Unterwasseratmungslogik ab. Nur fuer Sonderregeln verwenden; normalerweise sollten Spieler unter Wasser Luft verbrauchen.",
+    "AllFlightPaths": "Schaltet alle Flugpunkte fuer Spieler frei. Sehr komfortabel, aber nicht blizzlike und nimmt Entdeckungs-/Reisefortschritt aus dem Spiel.",
+    "InstantFlightPaths": "Laesst Flugreisen sofort enden. Spart Reisezeit, veraendert aber Weltgefuehl und kann Transportzeit als Spielmechanik entfernen.",
+    "AlwaysMaxSkillForLevel": "Setzt Fertigkeiten passend zum Charakterlevel immer auf Maximum. Macht Waffen-/Berufsskillen einfacher, entfernt aber Progression in diesen Bereichen.",
+    "AlwaysMaxWeaponSkill": "Haelt Waffenfertigkeiten immer maximal. Spieler muessen neue Waffenarten nicht mehr trainieren, wodurch Trefferprobleme beim Waffenwechsel verschwinden.",
+    "PlayerStart.MapsExplored": "Neue Charaktere starten mit aufgedeckten Karten. Praktisch fuer Komfortserver, nimmt aber Erkundung und Entdeckungs-XP aus dem Startspiel.",
+    "InstantLogout": "Spieler loggen sofort aus, ohne die normale Wartezeit. Komfortabel, kann aber genutzt werden, um Gefahr schneller zu verlassen.",
+    "PlayerSave.Stats.SaveOnlyOnLogout": "Speichert bestimmte Statistiken nur beim Ausloggen. Reduziert laufende Datenbanklast, kann aber bei Absturz neuere Statistikdaten verlieren.",
+    "EnableLowLevelRegenBoost": "Erhoeht Regeneration fuer niedrige Level. Macht den Einstieg leichter und reduziert Pausen nach Kaempfen.",
+    "SpellQueue.Enabled": "Aktiviert die Zauberwarteschlange. Spieler koennen naechste Zauber kurz vor Ende des aktuellen Zaubers einreihen; das fuehlt sich fluessiger und moderner an.",
+    "Stats.Limits.Enable": "Aktiviert Limits fuer Charakterwerte. Schutz gegen unplausible Werte; bei Custom-Items oder stark veraenderten Rates kann es Werte begrenzen.",
+    "PvPToken.Enable": "Aktiviert ein PvP-Marken-/Token-System, sofern Datenbank und Scripts es nutzen. Beeinflusst Belohnungen durch PvP-Kills.",
+    "Death.Bones.World": "Erzeugt Knochen/Leichenmarker nach Spielertod in der offenen Welt. Sichtbares Todesfeedback, aber mehr Objekte in stark bespielten Gebieten.",
+    "Death.Bones.BattlegroundOrArena": "Erzeugt Knochen/Leichenmarker in Schlachtfeldern oder Arena. Mehr Optik, aber in PvP-Matches eventuell unruhiger.",
+    "ItemDelete.Vendor": "Erlaubt automatisches Entfernen bestimmter Haendleritems. Vorsichtig verwenden, da falsche Regeln gewuenschte Gegenstaende entfernen koennen.",
+    "Creature.RepositionAgainstNpcs": "Kreaturen positionieren sich im Kampf gegen NPCs genauer neu. Kann NPC-Kaempfe natuerlicher machen, kostet aber etwas Bewegungslogik.",
+    "LeaveGroupOnLogout.Enabled": "Charaktere verlassen Gruppen beim Ausloggen. Das verhindert haengende Gruppen, kann aber Spieler aus geplanten Gruppen entfernen.",
+    "Instance.GMSummonPlayer": "Erlaubt GM-Beschwoerung in Instanzen. Praktisch fuer Support, kann aber Instanzregeln umgehen.",
+    "Instance.IgnoreLevel": "Ignoriert Levelanforderungen fuer Instanzen. Spieler koennen Inhalte frueher betreten; Progression und Schwierigkeit werden dadurch veraendert.",
+    "Instance.IgnoreRaid": "Ignoriert Raid-Anforderungen fuer Instanzen. Praktisch fuer Tests oder kleine private Gruppen, aber weniger blizzlike.",
+    "JoinBGAndLFG.Enable": "Erlaubt gleichzeitige Anmeldung fuer Schlachtfeld und Dungeonfinder. Komfortabler, kann aber Rollen-/Queue-Verhalten unuebersichtlicher machen.",
+    "DungeonFinder.CastDeserter": "Vergibt den Deserteur-Debuff bei Dungeonfinder-Abbruch. Aktiviert verhindert haeufiges Verlassen, deaktiviert ist lockerer fuer private Gruppen.",
+    "DungeonFinder.AllowCompleted": "Erlaubt Dungeonfinder fuer bereits abgeschlossene Inhalte. Praktisch zum Wiederholen, kann aber Belohnungslogik beeinflussen.",
+    "Wintergrasp.Enable": "Aktiviert Tausendwinter. Spieler koennen das PvP-Event nutzen, sofern Karten- und Datenbankdaten stimmen.",
+    "Battleground.GiveXPForKills": "Gewaehrt Erfahrung fuer Kills im Schlachtfeld. Macht PvP-Leveln moeglich, kann Leveltempo im PvP stark erhoehen.",
+    "Arena.AutoDistributePoints": "Verteilt Arenapunkte automatisch. Komfortabel fuer Wochenabschluss, muss aber zum gewuenschten PvP-Rhythmus passen.",
+    "Guild.AllowMultipleGuildMaster": "Erlaubt mehrere Gildenmeister. Administrativ flexibel, aber nicht blizzlike und kann Verantwortlichkeiten verwirren.",
+    "AddonChannel": "Erlaubt Addon-Kommunikation ueber den Addon-Kanal. Viele Addons brauchen das; deaktiviert kann Addonfunktionen brechen.",
+    "ChatFakeMessagePreventing": "Schutz gegen gefaelschte Chatnachrichten. Aktiviert ist sinnvoll gegen Missbrauch; deaktiviert nur fuer Tests.",
+    "Channel.RestrictedLfg": "Beschraenkt den SucheNachGruppe-Kanal. Hilft gegen Spam und falsche Nutzung, kann aber legitime Kommunikation einschraenken.",
+    "PreserveCustomChannels": "Erhaelt eigene Chatkanaele ueber Sitzungen hinweg. Komfortabel fuer Spielergruppen, speichert aber mehr Kanalzustand.",
+    "TalentsInspecting": "Erlaubt das Anzeigen fremder Talente beim Inspizieren. Komfortabel fuer Gruppen und Raids, weniger privat.",
+    "Event.Announce": "Kuendigt Serverevents im Chat an. Spieler sehen Start/Ende von Events besser; deaktiviert wirkt ruhiger.",
+    "Calculate.Creature.Zone.Area.Data": "Berechnet Kreatur-Zonen-/Gebietsdaten neu. Nur fuer Wartung oder Datenkorrektur aktivieren, da der Start laenger dauern kann.",
+    "Calculate.Gameoject.Zone.Area.Data": "Berechnet Spielobjekt-Zonen-/Gebietsdaten neu. Nur fuer Wartung oder Datenkorrektur aktivieren, da der Start laenger dauern kann.",
+    "MunchingBlizzlike.Enabled": "Steuert blizzlike Aura-Munching. Aktiviert kann historisches WotLK-Verhalten nachbilden; deaktiviert fuehlt sich fuer manche Klassen moderner an.",
+    "Daze.Enabled": "Aktiviert Benommenheit, wenn Spieler von hinten getroffen werden. Blizzlike und gefaehrlicher beim Reiten durch Gegnergruppen.",
+    "InfiniteAmmo.Enabled": "Aktiviert unendliche Munition. Komfortabel fuer Jaeger, entfernt aber Munitionsverwaltung und entsprechende Wirtschaft.",
+}
+
 META = {
     "RealmID": ("Realm-ID", "Muss zur Realm-ID in der Auth-Datenbank passen. Wenn dieser Wert nicht stimmt, zeigt der Authserver den Realm falsch an oder der Client kann sich nicht korrekt verbinden."),
     "WorldServerPort": ("Worldserver-Port", "Port fuer den Spielwelt-Zugang. Spieler verbinden nach dem Login auf diesen Port. Aenderungen brauchen Firewall-Anpassung und Realm-Konfiguration."),
@@ -157,6 +351,14 @@ META = {
     "Corpse.Decay.RAREELITE": ("Leichnam-Dauer: seltene Elite-Gegner", "Zeit in Sekunden, wie lange seltene Elite-Gegner nach dem Tod sichtbar bleiben. Diese Gegner sind besonderer als normale Mobs, deshalb ist ein längerer Wert meistens sinnvoll."),
     "Corpse.Decay.WORLDBOSS": ("Leichnam-Dauer: Weltbosse", "Zeit in Sekunden, wie lange ein Weltboss-Leichnam liegen bleibt. Lange Zeiten sind hier normal, damit Spieler den Kill sehen, Beute verteilen und Screenshots machen können."),
     "Rate.Corpse.Decay.Looted": ("Leichnam-Dauer nach dem Plündern", "Multiplikator für die verbleibende Leichnam-Zeit, nachdem ein Gegner geplündert wurde. 0.5 bedeutet: geplünderte Leichname verschwinden etwa doppelt so schnell. Höher lässt geplünderte Körper länger liegen, niedriger räumt die Welt schneller auf."),
+    "DBC.EnforceItemAttributes": ("Item-Werte aus DBC erzwingen", "Legt fest, ob der Worldserver Item-Attribute aus den Client-DBC-Dateien streng gegen die Datenbankwerte prüft und erzwingt. Aktiviert sorgt für mehr Konsistenz mit dem Client und verhindert unpassende Itemwerte; deaktiviert lässt Datenbank-Anpassungen freier wirken. Falsch gesetzte Werte können dazu führen, dass selbst bearbeitete Items anders wirken als erwartet."),
+    "Quests.EnableQuestTracker": ("Questfortschritt verfolgen", "Aktiviert die serverseitige Questverfolgung. Spieler sehen dadurch Questfortschritte zuverlässiger, zum Beispiel Zähler für getötete Gegner oder gesammelte Gegenstände. Deaktiviert kann die Anzeige weniger komfortabel sein, spart aber etwas Logik."),
+    "QuestPOI.Enabled": ("Questziele auf Karte anzeigen", "Aktiviert Quest-POI-Daten für die Kartenanzeige. Spieler sehen Questbereiche und Ziele besser auf Karte oder Minimap, sofern der Client und die Datenbank passende Daten haben. Deaktiviert wirkt das Questen klassischer, aber weniger komfortabel."),
+    "Quests.LowLevelHideDiff": ("Niedrige Quests ausblenden ab Levelabstand", "Bestimmt, ab welchem Levelabstand niedrige Quests für Spieler als zu niedrig behandelt und weniger prominent angezeigt werden. Höhere Werte zeigen länger alte Quests; niedrigere Werte räumen die Questanzeige früher auf."),
+    "Quests.HighLevelHideDiff": ("Hohe Quests ausblenden ab Levelabstand", "Bestimmt, ab welchem Levelabstand zu hohe Quests ausgeblendet oder als nicht passend behandelt werden. Höhere Werte zeigen Spielern früher schwere Quests; niedrigere Werte halten die Questanzeige stärker am aktuellen Levelbereich."),
+    "Quests.IgnoreRaid": ("Raid-Bedingung für Quests ignorieren", "Wenn aktiviert, können Questregeln rund um Raids lockerer behandelt werden. Spieler können dadurch bestimmte Questbedingungen auch erfüllen, wenn die normale Raid-Einschränkung sonst greifen würde. Nur aktivieren, wenn du bewusst weniger blizzlike Questregeln willst."),
+    "Quests.IgnoreAutoAccept": ("Automatische Questannahme ignorieren", "Steuert, ob automatische Questannahme aus den Daten ignoriert wird. Aktiviert verhindert, dass bestimmte Quests automatisch angenommen werden; deaktiviert folgt stärker den Datenbankvorgaben."),
+    "Quests.IgnoreAutoComplete": ("Automatischen Questabschluss ignorieren", "Steuert, ob automatische Questabschlüsse aus den Daten ignoriert werden. Aktiviert verhindert automatische Abschlüsse; deaktiviert lässt entsprechend konfigurierte Quests automatisch fertig werden."),
     "ActivateWeather": ("Wetter aktiv", "Aktiviert dynamisches Wetter. Spieler sehen Regen, Schnee oder Sandsturm je nach Zone. Aus spart etwas Logik, macht die Welt aber statischer."),
     "ChangeWeatherInterval": ("Wetterwechsel-Intervall", "Zeit in Millisekunden zwischen Wetter-Aktualisierungen. Niedriger wirkt lebendiger, kann aber haeufige Wetterwechsel erzeugen."),
     "AllowTickets": ("Tickets erlauben", "Aktiviert das GM-Ticketsystem. Spieler koennen Hilfeanfragen erstellen; GMs sehen und bearbeiten sie ingame."),
@@ -438,10 +640,50 @@ def describe(option: ConfigOption) -> tuple[str, str]:
     label = human_label(option.key)
     if option.key in META:
         return label, META[option.key][1]
+    if option.key in DIRECT_DESCRIPTIONS:
+        return label, DIRECT_DESCRIPTIONS[option.key]
     prefix_desc = description_by_prefix(option.key)
     if prefix_desc:
         return label, prefix_desc
-    return label, "Spezialoption aus der AzerothCore-Hauptkonfiguration. Aendere diesen Wert nur, wenn du die Folge kennst oder gezielt testest; viele Werte wirken erst nach Neustart."
+    return label, description_by_group(option, label)
+
+
+def description_by_group(option: ConfigOption, label: str) -> str:
+    group = group_for(option)
+    restart = "Worldserver" if option.file.endswith("worldserver.conf") else "Authserver"
+    if group == "auth_login":
+        return f"Authserver-Einstellung für {label}. Sie beeinflusst Login, Accountprüfung oder Schutz beim Verbinden. Zu strenge Werte können Spieler am Einloggen hindern; zu lockere Werte reduzieren Schutz und Kontrolle. Änderung wirkt nach Neustart des {restart}."
+    if group == "datenbanken":
+        return f"Datenbank-Einstellung für {label}. Sie beeinflusst Verbindungen, automatische Updates oder Datenbank-Threads. Höhere Threadwerte können mehr parallele Arbeit erlauben, erzeugen aber mehr Last; falsche Verbindungswerte verhindern den Serverstart. Änderung wirkt nach Neustart des {restart}."
+    if group == "remote":
+        return f"Remotezugriff-Einstellung für {label}. Sie beeinflusst Konsole, SOAP oder Remote-Admin. Falsche Werte können Webpanel-Befehle blockieren oder unnötig offene Verwaltungsports erzeugen. Nach Änderungen den betroffenen Dienst neu starten."
+    if group == "leistung":
+        return f"Leistungs- und Stabilitätswert für {label}. Höhere Werte bedeuten nicht automatisch besser: sie können mehr CPU, RAM oder Netzwerkpuffer nutzen. Zu niedrige Werte können Verzögerungen verursachen, zu hohe Werte unnötige Last. Änderung vorsichtig testen und Server neu starten."
+    if group == "logs":
+        return f"Protokollierungs- und Diagnosewert für {label}. Mehr Logging hilft bei Fehlersuche, kann aber größere Logdateien und etwas mehr Last erzeugen. Weniger Logging hält den Server ruhiger, erschwert aber spätere Fehleranalyse."
+    if group == "realm":
+        return f"Realm-, Client- oder Sitzungswert für {label}. Spieler bemerken solche Werte beim Verbinden, in der Realmliste, bei Verbindungsabbrüchen oder im allgemeinen Realmverhalten. Falsche Werte können Login, Cache oder Sitzungsstabilität stören."
+    if group == "gm":
+        return f"GM- und Support-Einstellung für {label}. Sie beeinflusst GM-Sichtbarkeit, Tickets, GM-Kommandos oder Supportfunktionen. Höhere Freigaben machen Administration komfortabler; zu offene Werte können normale Spielerfunktionen oder GM-Sichtbarkeit unbeabsichtigt verändern."
+    if group == "charaktere":
+        return f"Charakter-Einstellung für {label}. Spieler bemerken sie bei Charaktererstellung, Namen, Startwerten, Löschung oder beim Speichern von Charakterdaten. Zu großzügige Werte machen den Server komfortabler; zu strenge Werte können gewünschte Charaktere blockieren."
+    if group == "raten":
+        return f"Progressionswert für {label}. Er beeinflusst, wie schnell Spieler vorankommen, Punkte erhalten oder Skills steigern. Höhere Werte beschleunigen den Spielfortschritt; niedrigere Werte halten den Server näher an blizzlike Tempo."
+    if group == "welt":
+        return f"Welt- und Kartenwert für {label}. Spieler bemerken ihn bei Karte, Quests, Wetter, Sichtlinie, Bewegung oder Objektdarstellung. Höhere Komfortwerte machen die Welt lesbarer; strengere Werte sind näher an klassischem Verhalten oder sparen Leistung."
+    if group == "kampf":
+        return f"Kampf- oder Todesfolge für {label}. Sie beeinflusst Gegnerverhalten, Tod, Haltbarkeit, Sichtweite oder Kampfgefühl. Höhere Werte machen Kämpfe oft härter oder länger; niedrigere Werte machen Spiel und Farmen leichter."
+    if group == "loot":
+        return f"Beute-, Item- oder Wirtschaftswert für {label}. Spieler merken Änderungen beim Plündern, Verkaufen, Reparieren, Auktionshaus oder Itemverhalten. Höhere Werte können mehr Gold oder Items erzeugen und die Serverwirtschaft deutlich verändern."
+    if group == "gruppen":
+        return f"Gruppen-, Instanz- oder Dungeonfinderwert für {label}. Er beeinflusst Gruppenbildung, Instanzzugang, Resetzeiten, Dungeonfinder-Komfort oder Dungeonregeln. Änderungen wirken sich direkt auf Gruppencontent aus."
+    if group == "pvp":
+        return f"PvP-, Schlachtfeld- oder Arena-Regel für {label}. Sie beeinflusst Warteschlangen, Belohnungen, Punkte, Wertung oder PvP-Timer. Kleine Änderungen können PvP-Fortschritt und Balance stark verändern."
+    if group == "gilden":
+        return f"Gilden-, Post- oder Kommunikationswert für {label}. Spieler merken ihn bei Gildenbank, Gildenregeln, Postzustellung, Charter oder Kommunikation. Höhere Kosten oder strengere Limits bremsen Komfort; niedrigere Werte erleichtern Organisation."
+    if group == "warden":
+        return f"Warden-Schutzwert für {label}. Er beeinflusst Clientprüfungen und Reaktion auf auffällige Clients. Strengere Werte erhöhen Schutz, können aber auf privaten Clients eher Fehlalarme erzeugen."
+    return f"Servereinstellung für {label}. Sie beeinflusst einen speziellen Bereich des Normal-Realms. Höhere Werte verstärken meist die jeweilige Wirkung, niedrigere Werte reduzieren sie oder schalten sie ab. Änderung mit Backup testen und nach dem Speichern den betroffenen Dienst neu starten."
 
 
 def human_label(key: str) -> str:
@@ -453,6 +695,10 @@ def human_label(key: str) -> str:
 
 
 def special_label(key: str) -> str:
+    if key in DIRECT_LABELS:
+        return DIRECT_LABELS[key]
+    if key in META:
+        return META[key][0]
     if key.startswith("Rate.Creature."):
         parts = key.split(".")
         creature_type = creature_label(parts[2:-1])
@@ -518,6 +764,32 @@ def special_label(key: str) -> str:
         return "GM: " + " ".join(translate_label_part(part) for part in key.split(".")[1:])
     if key.startswith("Warden."):
         return "Warden: " + " ".join(translate_label_part(part) for part in key.split(".")[1:])
+    if key.startswith("World."):
+        return "Weltserver: " + " ".join(translate_label_part(part) for part in key.split(".")[1:])
+    if key.startswith("PacketSpoof."):
+        return "Paketfaelschung: " + " ".join(translate_label_part(part) for part in key.split(".")[1:])
+    if key.startswith("ChatFlood."):
+        return "Chatflut-Schutz: " + " ".join(translate_label_part(part) for part in key.split(".")[1:])
+    if key.startswith("ChatLevelReq."):
+        return "Chat-Levelanforderung: " + " ".join(translate_label_part(part) for part in key.split(".")[1:])
+    if key.startswith("LevelReq."):
+        return "Levelanforderung: " + " ".join(translate_label_part(part) for part in key.split(".")[1:])
+    if key.startswith("Command."):
+        return "GM-Befehl: " + " ".join(translate_label_part(part) for part in key.split(".")[1:])
+    if key.startswith("Death."):
+        return "Tod: " + " ".join(translate_label_part(part) for part in key.split(".")[1:])
+    if key.startswith("Pet."):
+        return "Begleiter: " + " ".join(translate_label_part(part) for part in key.split(".")[1:])
+    if key.startswith("Item."):
+        return "Item: " + " ".join(translate_label_part(part) for part in key.split(".")[1:])
+    if key.startswith("Loot."):
+        return "Beute: " + " ".join(translate_label_part(part) for part in key.split(".")[1:])
+    if key.startswith("Quests."):
+        return "Quests: " + " ".join(translate_label_part(part) for part in key.split(".")[1:])
+    if key.startswith("Quest"):
+        return "Quest: " + " ".join(translate_label_part(part) for part in key.split(".")[1:])
+    if key.startswith("Rate."):
+        return "Multiplikator: " + " ".join(translate_label_part(part) for part in key.split(".")[1:])
     return ""
 
 
@@ -666,6 +938,171 @@ def translate_label_part(part: str) -> str:
         "Log": "Log",
         "Logger": "Logger",
         "Metric": "Metrik",
+        "Wrong": "falsch",
+        "Pass": "Passwort",
+        "BanTime": "Sperrdauer",
+        "BanType": "Sperrart",
+        "Logging": "Protokollierung",
+        "Strict": "streng",
+        "Version": "Version",
+        "Check": "Pruefung",
+        "Directory": "Verzeichnis",
+        "Executable": "Programm",
+        "Location": "Standort",
+        "File": "Datei",
+        "TOTP": "Zwei-Faktor-Code",
+        "Master": "Haupt",
+        "Secret": "Schluessel",
+        "Processors": "CPU-Kerne",
+        "Priority": "Prioritaet",
+        "Realms": "Realms",
+        "State": "Status",
+        "Birthday": "Geburtstag",
+        "Availability": "Verfuegbarkeit",
+        "Zone": "Zone",
+        "Locale": "Sprache",
+        "Cache": "Cache",
+        "Add": "hinzufuegen",
+        "Idle": "inaktiv",
+        "Connections": "Verbindungen",
+        "Socket": "Socket",
+        "Out": "Ablauf",
+        "Active": "aktiv",
+        "Overspeed": "zu schnelle Bewegung",
+        "Pings": "Pings",
+        "Disconnect": "Verbindungsabbruch",
+        "Tolerance": "Toleranz",
+        "After": "nach",
+        "DC": "Disconnect",
+        "Core": "Serverkern",
+        "Stuck": "haengt",
+        "Save": "speichern",
+        "Immediately": "sofort",
+        "Show": "anzeigen",
+        "In": "in",
+        "Who": "Wer",
+        "List": "Liste",
+        "Returns": "Rueckgabe",
+        "Prevent": "verhindern",
+        "AFK": "AFK",
+        "Logout": "Logout",
+        "Packet": "Paket",
+        "Spoof": "Faelschung",
+        "Duration": "Dauer",
+        "Detect": "erkennen",
+        "Pos": "Position",
+        "Collision": "Kollision",
+        "GameObject": "Spielobjekt",
+        "LoS": "Sichtlinie",
+        "Preload": "vorladen",
+        "Instanced": "instanziert",
+        "Map": "Karte",
+        "Grids": "Kartenbereiche",
+        "Dont": "nicht",
+        "Random": "zufaellig",
+        "Movement": "Bewegung",
+        "Paths": "Pfade",
+        "Deleted": "geloescht",
+        "Lookup": "Suche",
+        "Results": "Ergebnisse",
+        "Water": "Wasser",
+        "Breath": "Atmung",
+        "Flight": "Flug",
+        "Always": "immer",
+        "Weapon": "Waffe",
+        "Custom": "eigene",
+        "Spells": "Zauber",
+        "Explored": "aufgedeckt",
+        "Stats": "Statistiken",
+        "Only": "nur",
+        "Validate": "pruefen",
+        "Learned": "gelernt",
+        "By": "durch",
+        "Keep": "behalten",
+        "Days": "Tage",
+        "Names": "Namen",
+        "Reserved": "reserviert",
+        "Profanity": "Schimpfwoerter",
+        "Settings": "Einstellungen",
+        "Regen": "Regeneration",
+        "Boost": "Bonus",
+        "MoveSpeed": "Bewegungsgeschwindigkeit",
+        "Income": "Einnahmen",
+        "Loss": "Verlust",
+        "Rest": "Erholung",
+        "Offline": "offline",
+        "Tavern": "Gasthaus",
+        "City": "Stadt",
+        "Wilderness": "Wildnis",
+        "Bonus": "Bonus",
+        "MissChanceMultiplier": "Verfehlchance",
+        "Target": "Ziel",
+        "Affects": "wirkt",
+        "Trade": "Handel",
+        "Talent": "Talent",
+        "Pet": "Begleiter",
+        "Discovery": "Entdeckung",
+        "Dodge": "Ausweichen",
+        "Parry": "Parieren",
+        "Block": "Blocken",
+        "Crit": "kritischer Treffer",
+        "Points": "Punkte",
+        "Token": "Marke",
+        "Durability": "Haltbarkeit",
+        "Absorb": "Absorbieren",
+        "Sickness": "Schwaeche",
+        "Reclaim": "zurueckholen",
+        "Bones": "Knochen",
+        "RankMod": "Rangmodifikator",
+        "Quality": "Qualitaet",
+        "Tradeable": "handelbar",
+        "Monster": "Monster",
+        "Sight": "Sicht",
+        "Aggro": "Aggro",
+        "Boss": "Boss",
+        "Diff": "Abstand",
+        "Range": "Reichweite",
+        "Text": "Text",
+        "Emote": "Emote",
+        "Waypoint": "Wegpunkt",
+        "Unload": "entladen",
+        "Shared": "geteilt",
+        "Heroic": "heroisch",
+        "Access": "Zugang",
+        "Requirements": "Anforderungen",
+        "Print": "Ausgabe",
+        "Mode": "Modus",
+        "Portal": "Portal",
+        "Avg": "Durchschnitt",
+        "Ilevel": "Gegenstandsstufe",
+        "Optional": "optional",
+        "String": "Text",
+        "Join": "beitreten",
+        "BG": "Schlachtfeld",
+        "And": "und",
+        "Petition": "Gildenurkunde",
+        "Signs": "Unterschriften",
+        "FFA": "Jeder gegen jeden",
+        "Capture": "Eroberung",
+        "MMR": "MMR",
+        "Team": "Team",
+        "Charter": "Urkunde",
+        "Recruit": "Rekrutierung",
+        "Friend": "Freund",
+        "Difference": "Unterschied",
+        "Events": "Events",
+        "Sunsreach": "Sonnenweiten",
+        "Counter": "Zaehler",
+        "Scourge": "Geissel",
+        "Invasion": "Invasion",
+        "ICC": "ICC",
+        "Buff": "Stärkung",
+        "Horde": "Horde",
+        "Alliance": "Allianz",
+        "Gunship": "Kanonenboot",
+        "Munching": "Aura-Munching",
+        "Daze": "Benommenheit",
+        "Ammo": "Munition",
     }
     if part in words:
         return words[part]
@@ -692,6 +1129,20 @@ def description_by_prefix(key: str) -> str:
         return "Multiplikator fuer den Kaufpreis beim Haendler. Hoehere Werte machen Items dieser Qualitaet beim NPC teurer."
     if key.startswith("Rate.Auction."):
         return "Multiplikator fuer Auktionshausregeln. Je nach Feld wird Auktionsdauer, Anzahlung oder Auktionshausgebuehr veraendert; Spieler merken das direkt beim Einstellen und Verkaufen von Auktionen."
+    if key.startswith("Rate.MoveSpeed."):
+        return "Multiplikator fuer Bewegungsgeschwindigkeit. Höhere Werte lassen die betroffene Einheit schneller laufen; niedrigere Werte verlangsamen Bewegung. Das verändert Reisezeit, Kampfgefühl und Verfolgung durch NPCs deutlich."
+    if key.startswith(("Rate.Health", "Rate.Mana", "Rate.Rage", "Rate.Energy", "Rate.Focus", "Rate.RunicPower", "Rate.Loyalty")):
+        return "Multiplikator fuer Ressourcen oder Regeneration. Höhere Werte geben Spielern oder Begleitern mehr Spielraum und machen Kämpfe leichter; niedrigere Werte machen Ressourcenmanagement wichtiger."
+    if key.startswith("Rate.Rest."):
+        return "Multiplikator fuer Erholungsbonus. Höhere Werte lassen ausgeruhte Erfahrung schneller entstehen oder länger wirken; niedrigere Werte bremsen den Bonus für Gelegenheitsspieler."
+    if key.startswith("Rate.MissChanceMultiplier."):
+        return "Multiplikator fuer Verfehlchance. Höhere Werte erhöhen die Chance, Ziele zu verfehlen; niedrigere Werte machen Treffer zuverlässiger. Das beeinflusst Kampfgefühl und Balance direkt."
+    if key.startswith("Rate.Pet."):
+        return "Begleiter-Multiplikator. Höhere Werte beschleunigen Fortschritt oder Wirkung von Begleitern; niedrigere Werte machen Begleiterentwicklung langsamer."
+    if key.startswith("Rate.Reward"):
+        return "Belohnungs-Multiplikator. Höhere Werte erhöhen Geld- oder Bonusbelohnungen und bringen mehr Gold in die Wirtschaft; niedrigere Werte halten Belohnungen näher an blizzlike."
+    if key.startswith("Rate.InstanceResetTime"):
+        return "Multiplikator fuer Instanz-Resetzeiten. Höhere Werte verlängern Resetzeiten, niedrigere Werte lassen Instanzen schneller wieder verfügbar werden."
     if key.startswith("Rate.Creature.") and key.endswith(".HP"):
         return "Multiplikator fuer die Lebenspunkte dieser Gegnerkategorie. Hoehere Werte machen Kaempfe laenger und schwerer; niedrigere Werte machen Solo-Spiel und Farmen einfacher."
     if key.startswith("Rate.Creature.") and "Damage" in key:
@@ -740,6 +1191,14 @@ def description_by_prefix(key: str) -> str:
         return "Tausendwinter-Regel. Beeinflusst Schlachtzeiten, Spielerlimits, Mindestlevel und Neustartverhalten des Events."
     if key.startswith("Quest") or key.startswith("Quests."):
         return "Questverhalten. Spieler bemerken dies bei Questanzeige, Questbedingungen oder Belohnungen."
+    if key.startswith("DBC."):
+        return "DBC- und Clientdatenprüfung. Diese Werte bestimmen, wie streng der Server Daten aus Clientdateien gegen Datenbankwerte prüft. Strengere Werte erhöhen Konsistenz, können aber eigene Anpassungen ausbremsen."
+    if key.startswith("ItemDelete."):
+        return "Automatisches Löschen alter oder bestimmter Items. Diese Einstellung beeinflusst, welche Items aus Charakterdaten entfernt oder behalten werden. Falsche Werte können gewünschte Items löschen, deshalb vorsichtig testen."
+    if key.startswith("Item."):
+        return "Item-Regel. Sie beeinflusst, wie Items nach Handel, Loot oder Sonderfällen behandelt werden. Spieler bemerken Änderungen direkt im Inventar oder beim Weitergeben von Gegenständen."
+    if key.startswith("Loot"):
+        return "Loot-Regel. Sie beeinflusst, wann und wie Beute verteilt oder beschränkt wird. Änderungen wirken sich direkt auf Gruppenloot und Itemverteilung aus."
     if key.startswith("Creature") or key.startswith("Npc"):
         return "Kreaturen- und NPC-Verhalten. Beeinflusst Aggro, Flucht, Bewegung oder Regeneration in der Welt."
     if key.startswith("Network."):
@@ -750,6 +1209,20 @@ def description_by_prefix(key: str) -> str:
         return "Fraktionsuebergreifende Interaktion. Aktiviert oder deaktiviert, ob Allianz und Horde in diesem Bereich miteinander interagieren duerfen."
     if key.startswith("Respawn."):
         return "Respawn-Verhalten fuer Kreaturen oder Objekte. Beeinflusst, wann Gegner oder Spielobjekte nach Tod, Nutzung oder hoher Spielerzahl wieder erscheinen."
+    if key.startswith("Durability"):
+        return "Haltbarkeitsverlust. Höhere Werte lassen Ausrüstung schneller Schaden nehmen und erhöhen Reparaturdruck; niedrigere Werte machen Tod und Kämpfe günstiger."
+    if key.startswith("Death."):
+        return "Todesregel. Sie beeinflusst Geistheiler, Knochen, Leichnamrückkehr oder Wiederbelebungsfolgen. Spieler merken Änderungen direkt nach dem Sterben."
+    if key.startswith("Pet."):
+        return "Begleiterregel. Sie beeinflusst Werte oder Skalierung von Begleitern und macht Jäger-/Hexer-Spiel je nach Wert stärker oder schwächer."
+    if key.startswith("ListenRange."):
+        return "Chat-Reichweite in der Welt. Höhere Werte lassen Sagen, Emotes oder Schreien weiter hörbar sein; niedrigere Werte begrenzen Kommunikation stärker auf die Umgebung."
+    if key.startswith("AllowTwoSide."):
+        return "Fraktionsübergreifende Interaktion. Aktiviert oder deaktiviert, ob Allianz und Horde in diesem Bereich miteinander interagieren dürfen."
+    if key.startswith("Debug."):
+        return "Debug-Funktion für Tests. Aktivieren kann Sonderverhalten einschalten, das für Entwicklung praktisch ist, aber auf einem normalen Spielserver unblizzlike oder ausnutzbar sein kann."
+    if key.startswith("Calculate."):
+        return "Berechnungs- und Wartungsfunktion beim Serverstart. Aktivieren kann Daten nachberechnen, verlangsamt aber den Start stark und ist meist nur für Korrekturen oder Debugging gedacht."
     return ""
 
 

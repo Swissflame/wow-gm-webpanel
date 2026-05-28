@@ -576,6 +576,8 @@ def collect_sensitive_server_info(cfg: dict) -> list[dict]:
             ("Port", cfg["mysql"].get("port")),
             ("Benutzer", cfg["mysql"].get("user")),
             ("Passwort", cfg["mysql"].get("password")),
+            ("Root-Benutzer", cfg["mysql"].get("root_user") or "root"),
+            ("Root-Passwort", cfg["mysql"].get("root_password") or "nicht im Webpanel gespeichert; MariaDB/MySQL gibt Passwörter nicht im Klartext aus"),
             ("Auth-Datenbank", cfg["mysql"].get("auth_db")),
             ("World-Datenbank Normal", cfg["mysql"].get("world_db")),
             ("Characters-Datenbank Normal", cfg["mysql"].get("characters_db")),

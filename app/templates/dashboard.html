@@ -10,5 +10,16 @@
   <div class="card"><span>Auktionen</span><strong>{{ stats.get('auctions','?') }}</strong></div>
   <div class="card"><span>Playerbot-Chars</span><strong>{{ stats.get('pb_characters','?') }}</strong></div>
 </section>
+<section class="panel dashboard-download">
+  <div>
+    <h2>WoW-Client</h2>
+    <p>Clientpaket für diesen Server. Der Download wird als TAR-Archiv bereitgestellt und liegt außerhalb des Git-Repositories auf dem Webserver.</p>
+  </div>
+  {% if client_download_available %}
+  <a class="button primary" href="/downloads/client">Client herunterladen</a>
+  {% else %}
+  <button class="primary" disabled>Client wird vorbereitet</button>
+  {% endif %}
+</section>
 {% if stats.error %}<p class="error">{{ stats.error }}</p>{% endif %}
 {% endblock %}

@@ -1,5 +1,5 @@
 from fastapi import FastAPI, Request, Depends, Form, HTTPException
-from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
@@ -29,6 +29,7 @@ from .services.main_config import grouped_main_configs, load_main_configs, save_
 from .i18n import translate
 
 BASE = Path(__file__).resolve().parent
+CLIENT_DOWNLOAD_DIR = Path("/opt/wow-gm-downloads/WoW_3.3.5a_rising-gods.de")
 templates = Jinja2Templates(directory=str(BASE / "templates"))
 
 
@@ -52,6 +53,7 @@ def create_app() -> FastAPI:
     app.add_api_route("/logout", logout, methods=["POST"])
     app.add_api_route("/context", context_post, methods=["POST"])
     app.add_api_route("/dashboard", dashboard, methods=["GET"], response_class=HTMLResponse)
+    app.add_api_route("/downloads/client", client_download, methods=["GET"])
     app.add_api_route("/online", online, methods=["GET"], response_class=HTMLResponse)
     app.add_api_route("/accounts", accounts, methods=["GET"], response_class=HTMLResponse)
     app.add_api_route("/accounts/create", account_create, methods=["POST"])
@@ -227,7 +229,36 @@ def dashboard(request: Request, db: Session = Depends(get_db), user: PanelUser =
         stats = wowdb.dashboard_stats(cfg, realm)
     except Exception as exc:
         stats = {"error": str(exc)}
-    return render(request, "dashboard.html", {"title": "Dashboard", "status": status, "stats": stats}, db)
+    return render(request, "dashboard.html", {
+        "title": "Dashboard",
+        "status": status,
+        "stats": stats,
+        "client_download_available": CLIENT_DOWNLOAD_DIR.exists(),
+    }, db)
+
+
+def client_download(request: Request, user: PanelUser = Depends(current_user)):
+    if not CLIENT_DOWNLOAD_DIR.exists() or not CLIENT_DOWNLOAD_DIR.is_dir():
+        raise HTTPException(404, "Client-Download ist noch nicht auf dem Server bereitgestellt.")
+    process = subprocess.Popen(
+        ["tar", "-cf", "-", "-C", str(CLIENT_DOWNLOAD_DIR.parent), CLIENT_DOWNLOAD_DIR.name],
+        stdout=subprocess.PIPE,
+    )
+
+    def stream_tar():
+        try:
+            while True:
+                chunk = process.stdout.read(1024 * 1024) if process.stdout else b""
+                if not chunk:
+                    break
+                yield chunk
+        finally:
+            if process.stdout:
+                process.stdout.close()
+            process.wait()
+
+    headers = {"Content-Disposition": 'attachment; filename="WoW_3.3.5a_rising-gods.de.tar"'}
+    return StreamingResponse(stream_tar(), media_type="application/x-tar", headers=headers)
 
 
 def online(request: Request, db: Session = Depends(get_db), user: PanelUser = Depends(require_level(0))):

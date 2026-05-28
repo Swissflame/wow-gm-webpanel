@@ -277,15 +277,19 @@ def transfer_character(cfg: dict, source_realm: str, guid: int, target_realm: st
 
 
 def next_id(conn, table: str, column: str) -> int:
-    value = conn.execute(text(f"SELECT COALESCE(MAX({column}), 0) + 1 FROM {table}")).scalar()
+    value = conn.execute(text(f"SELECT COALESCE(MAX({qname(column)}), 0) + 1 FROM {qname(table)}")).scalar()
     return int(value or 1)
 
 
 def table_columns(conn, table: str) -> set[str]:
     try:
-        return {row["Field"] for row in conn.execute(text(f"DESCRIBE {table}")).mappings()}
+        return {row["Field"] for row in conn.execute(text(f"DESCRIBE {qname(table)}")).mappings()}
     except Exception:
         return set()
+
+
+def qname(name: str) -> str:
+    return "`" + name.replace("`", "``") + "`"
 
 
 def insert_row(conn, table: str, values: dict):
@@ -293,9 +297,9 @@ def insert_row(conn, table: str, values: dict):
     if not columns:
         return
     binds = {column: values[column] for column in columns}
-    names = ", ".join(columns)
+    names = ", ".join(qname(column) for column in columns)
     params = ", ".join(f":{column}" for column in columns)
-    conn.execute(text(f"INSERT INTO {table} ({names}) VALUES ({params})"), binds)
+    conn.execute(text(f"INSERT INTO {qname(table)} ({names}) VALUES ({params})"), binds)
 
 
 def copy_rows_with_guid(source, target, table: str, column: str, old_guid: int, new_guid: int, item_map: dict[int, int], mail_map: dict[int, int]):
@@ -303,7 +307,7 @@ def copy_rows_with_guid(source, target, table: str, column: str, old_guid: int, 
     target_columns = table_columns(target, table)
     if not source_columns or not target_columns or column not in source_columns:
         return
-    rows_to_copy = source.execute(text(f"SELECT * FROM {table} WHERE {column}=:guid"), {"guid": old_guid}).mappings().all()
+    rows_to_copy = source.execute(text(f"SELECT * FROM {qname(table)} WHERE {qname(column)}=:guid"), {"guid": old_guid}).mappings().all()
     for row in rows_to_copy:
         values = dict(row)
         values[column] = new_guid

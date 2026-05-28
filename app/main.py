@@ -96,6 +96,11 @@ def render(request: Request, name: str, context: dict, db: Session | None = None
     return templates.TemplateResponse(name, context)
 
 
+def short_flash(message: str, limit: int = 900) -> str:
+    message = " ".join(str(message).split())
+    return message if len(message) <= limit else message[:limit] + " ..."
+
+
 def setup_done(db: Session) -> bool:
     return bool(all_config(db).get("setup_complete"))
 
@@ -350,10 +355,10 @@ def character_transfer(request: Request, realm: str, guid: int, db: Session = De
         record_command(db, user.id, realm, f"notify {message}", notify_result)
         notices.append(notify_result)
         time.sleep(20)
-        kick_result = execute_gm_command(db, cfg, realm, f"kick {character['name']} Charaktertransfer durch GM-Webpanel")
+        kick_result = execute_gm_command(db, cfg, realm, f"kick {character['name']}")
         record_command(db, user.id, realm, f"kick {character['name']}", kick_result)
         notices.append(kick_result)
-        for _ in range(10):
+        for _ in range(35):
             time.sleep(1)
             refreshed = wowdb.character_detail(cfg, realm, guid)
             if not refreshed or not refreshed.get("online"):
@@ -367,12 +372,12 @@ def character_transfer(request: Request, realm: str, guid: int, db: Session = De
         result = wowdb.transfer_character(cfg, realm, guid, target_realm, action, target_name.strip() or character["name"])
         log_action(db, user.id, f"character_{action}", f"{realm}:{guid}->{target_realm}:{result['new_guid']}", result["name"], request.client.host if request.client else None)
     except Exception as exc:
-        request.session["character_flash"] = f"Transfer fehlgeschlagen: {exc}"
+        request.session["character_flash"] = short_flash(f"Transfer fehlgeschlagen: {exc}")
         return RedirectResponse(f"/characters/{realm}/{guid}", status_code=303)
 
     verb = "kopiert" if action == "copy" else "verschoben"
-    extra = (" Hinweise: " + " ".join(notices)) if notices else ""
-    request.session["character_flash"] = f"Charakter {result['name']} wurde nach {result['target_realm_label']} {verb}. Neue GUID: {result['new_guid']}.{extra}"
+    extra = " Der Charakter wurde vorher ausgeloggt." if notices else ""
+    request.session["character_flash"] = short_flash(f"Charakter {result['name']} wurde nach {result['target_realm_label']} {verb}. Neue GUID: {result['new_guid']}.{extra}")
     return RedirectResponse(f"/characters/{target_realm}/{result['new_guid']}", status_code=303)
 
 

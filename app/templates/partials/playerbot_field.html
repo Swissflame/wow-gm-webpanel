@@ -5,6 +5,40 @@
     <option value="0" {% if field.value in ["0","false","False","no","No"] %}selected{% endif %}>Nein / deaktiviert</option>
     <option value="1" {% if field.value in ["1","true","True","yes","Yes"] %}selected{% endif %}>Ja / aktiviert</option>
   </select>
+  {% elif field.type == "enum_roll" %}
+  <select name="{{ field.key }}" {% if user.gm_level < 3 %}disabled{% endif %}>
+    <option value="0" {% if field.value == "0" %}selected{% endif %}>0 · Passen: Bot würfelt nicht</option>
+    <option value="1" {% if field.value == "1" %}selected{% endif %}>1 · Gier: Bot würfelt nur Gier</option>
+    <option value="2" {% if field.value == "2" %}selected{% endif %}>2 · Bedarf: Bot darf Bedarf würfeln</option>
+  </select>
+  {% elif field.type == "enum_quality" %}
+  <select name="{{ field.key }}" {% if user.gm_level < 3 %}disabled{% endif %}>
+    <option value="0" {% if field.value == "0" %}selected{% endif %}>0 · Grau / Schlecht</option>
+    <option value="1" {% if field.value == "1" %}selected{% endif %}>1 · Weiß / Normal</option>
+    <option value="2" {% if field.value == "2" %}selected{% endif %}>2 · Grün / Ungewöhnlich</option>
+    <option value="3" {% if field.value == "3" %}selected{% endif %}>3 · Blau / Selten</option>
+    <option value="4" {% if field.value == "4" %}selected{% endif %}>4 · Episch</option>
+    <option value="5" {% if field.value == "5" %}selected{% endif %}>5 · Legendär</option>
+  </select>
+  {% elif field.type == "enum_pet_stance" %}
+  <select name="{{ field.key }}" {% if user.gm_level < 3 %}disabled{% endif %}>
+    <option value="0" {% if field.value == "0" %}selected{% endif %}>0 · Passiv</option>
+    <option value="1" {% if field.value == "1" %}selected{% endif %}>1 · Defensiv</option>
+    <option value="2" {% if field.value == "2" %}selected{% endif %}>2 · Aggressiv</option>
+  </select>
+  {% elif field.type == "enum_trading" %}
+  <select name="{{ field.key }}" {% if user.gm_level < 3 %}disabled{% endif %}>
+    <option value="0" {% if field.value == "0" %}selected{% endif %}>0 · Handel aus</option>
+    <option value="1" {% if field.value == "1" %}selected{% endif %}>1 · Kaufen und verkaufen</option>
+    <option value="2" {% if field.value == "2" %}selected{% endif %}>2 · Nur kaufen</option>
+    <option value="3" {% if field.value == "3" %}selected{% endif %}>3 · Nur verkaufen</option>
+  </select>
+  {% elif field.type == "enum_movement" %}
+  <select name="{{ field.key }}" {% if user.gm_level < 3 %}disabled{% endif %}>
+    <option value="0" {% if field.value == "0" %}selected{% endif %}>0 · MoveSplinePath überall aktiv</option>
+    <option value="1" {% if field.value == "1" %}selected{% endif %}>1 · In BG/Arena deaktivieren</option>
+    <option value="2" {% if field.value == "2" %}selected{% endif %}>2 · Überall deaktivieren</option>
+  </select>
   {% elif field.type == "number" %}
   <input name="{{ field.key }}" type="number" step="any" value="{{ field.value }}" {% if user.gm_level < 3 %}disabled{% endif %}>
   {% elif field.type == "password" %}

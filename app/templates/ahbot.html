@@ -99,6 +99,26 @@
     </table>
     {% if not logs %}<p>Noch keine AHBot-Änderungen protokolliert.</p>{% endif %}
   </section>
+
+  <section class="panel command-overview">
+    <h2>Ingame-Befehle für AHBot</h2>
+    <p class="hint">AHBot wird in AzerothCore hauptsächlich über <code>mod_ahbot.conf</code>, die AHBot-Datenbankwerte und einen Realm-Neustart gesteuert. Auf deinem Server ist als direkter Ingame-/GM-Befehl nur der Reload-Befehl in der Command-Tabelle vorhanden.</p>
+    <div class="command-grid">
+      <article class="command-card">
+        <h3>Auktionen neu laden</h3>
+        <code>.reload auctions</code>
+        <p>Lädt dynamische Auktionsdaten aus der Datenbank neu. Das ist hilfreich, wenn Werte in der Datenbank geändert wurden. Es ersetzt keinen vollständigen Neustart, wenn Config-Dateien geändert wurden.</p>
+        <small>GM-Level: 3 · Quelle: <code>world.command</code></small>
+      </article>
+    </div>
+    <details class="nested-options">
+      <summary>Was ist kein Ingame-Befehl?</summary>
+      <div class="command-note">
+        <p><strong>Verkaufen/Kaufen aktivieren, Preise, Qualitätsquoten, Items pro Zyklus:</strong> Diese Werte werden über die AHBot-Seite im Webpanel oder direkt über die Config/DB gesetzt.</p>
+        <p><strong>Nach Config-Änderungen:</strong> Spielerwarnung senden und betroffenen Realm neu starten. Genau dafür ist der Button oben auf dieser Seite gedacht.</p>
+      </div>
+    </details>
+  </section>
 </section>
 {% endif %}
 {% endblock %}

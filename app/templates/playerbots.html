@@ -107,6 +107,159 @@
     </table>
     {% if not logs %}<p>Noch keine Playerbot-Änderungen protokolliert.</p>{% endif %}
   </section>
+
+  <section class="panel command-overview">
+    <h2>Ingame-Befehle für Playerbot</h2>
+    <p class="hint">Viele Playerbot-Befehle funktionieren per Flüstern an einen einzelnen Bot, z.B. <code>/w BOTNAME follow</code>, oder im Gruppen-/Raidchat für mehrere Bots, z.B. <code>/p follow</code>. Die direkt sichtbare Hilfe im Spiel ist <code>/w BOTNAME help</code>.</p>
+
+    <details class="nested-options" open>
+      <summary>Botverwaltung über GM-/Chatbefehle</summary>
+      <div class="command-grid">
+        <article class="command-card"><h3>Bot hinzufügen</h3><code>.playerbots bot add BOTNAME</code><p>Loggt einen vorhandenen Charakter als Bot ein und bindet ihn an dich.</p></article>
+        <article class="command-card"><h3>Bot entfernen</h3><code>.playerbots bot remove BOTNAME</code><p>Loggt den Bot wieder aus. Kurzform im Code: <code>rm</code> oder <code>logout</code>.</p></article>
+        <article class="command-card"><h3>Botliste</h3><code>.playerbots bot list</code><p>Zeigt verfügbare und bereits aktive Bots deines Accounts bzw. deiner Gruppe.</p></article>
+        <article class="command-card"><h3>Klassenbot holen</h3><code>.playerbots bot addclass CLASS [male|female]</code><p>Holt einen passenden RandomBot der gewünschten Klasse. Klassen: warrior, paladin, hunter, rogue, priest, shaman, mage, warlock, druid, dk.</p></article>
+        <article class="command-card"><h3>Klassen suchen</h3><code>.playerbots bot lookup</code><p>Zeigt die Klassen an, aus denen ein Bot per <code>addclass</code> gewählt werden kann.</p></article>
+        <article class="command-card"><h3>Account-Bots hinzufügen</h3><code>.playerbots bot addaccount ACCOUNT</code><p>Fügt Charaktere eines Accounts hinzu, sofern die Accountbot-/Trust-Regeln dies erlauben.</p></article>
+        <article class="command-card"><h3>Config neu laden</h3><code>.playerbots bot reload</code><p>Lädt die Playerbot-Konfiguration im laufenden Realm neu. Nur GM.</p></article>
+        <article class="command-card"><h3>Self-Bot</h3><code>.playerbots bot self</code><p>Schaltet Bot-KI für den eigenen Charakter ein oder aus, falls in der Config erlaubt.</p></article>
+        <article class="command-card"><h3>Bot neu ausrüsten</h3><code>.playerbots bot init=auto BOTNAME</code><p>Initialisiert einen Addclass-Bot passend zu deinem Level/Gear neu. Varianten: <code>init=white</code>, <code>init=green</code>, <code>init=blue</code>, <code>init=epic</code>, <code>init=legendary</code>, <code>init=GEARSCORE</code>.</p></article>
+        <article class="command-card"><h3>Eigenen Charakter rerollen</h3><code>.playerbots bot initself=epic</code><p>GM-Spezialbefehl. Vorsicht: randomisiert deinen eigenen Charakter. Varianten wie bei <code>init=...</code>.</p></article>
+      </div>
+    </details>
+
+    <details class="nested-options">
+      <summary>RandomBots, Diagnose und Admin</summary>
+      <div class="command-grid">
+        <article class="command-card"><h3>RandomBot-Statistik</h3><code>.playerbots rndbot stats</code><p>Gibt Statistik über RandomBots aus.</p></article>
+        <article class="command-card"><h3>RandomBots aktualisieren</h3><code>.playerbots rndbot update</code><p>Stößt eine interne RandomBot-Aktualisierung an.</p></article>
+        <article class="command-card"><h3>RandomBots zurücksetzen</h3><code>.playerbots rndbot reset</code><p>Löscht RandomBot-Zustände aus der Playerbot-Datenbank. Danach ist ein Serverneustart sinnvoll.</p></article>
+        <article class="command-card"><h3>RandomBots initialisieren</h3><code>.playerbots rndbot init [NAME]</code><p>Initialisiert alle oder passende RandomBots. Ohne Namen wird meist breit gearbeitet.</p></article>
+        <article class="command-card"><h3>RandomBots refresh</h3><code>.playerbots rndbot refresh [NAME]</code><p>Aktualisiert Botdaten, Ausrüstung oder Zustand.</p></article>
+        <article class="command-card"><h3>RandomBots leveln</h3><code>.playerbots rndbot levelup [NAME]</code><p>Erhöht bzw. aktualisiert Level-/Gearzustand ausgewählter RandomBots.</p></article>
+        <article class="command-card"><h3>RandomBots teleportieren</h3><code>.playerbots rndbot teleport [NAME]</code><p>Teleportiert RandomBots passend zu Level/Logik.</p></article>
+        <article class="command-card"><h3>RandomBots wiederbeleben</h3><code>.playerbots rndbot revive [NAME]</code><p>Belebt tote RandomBots wieder.</p></article>
+        <article class="command-card"><h3>Grind-Ort wechseln</h3><code>.playerbots rndbot grind [NAME]</code><p>Schickt RandomBots an einen neuen Grind-/Levelort.</p></article>
+        <article class="command-card"><h3>Strategie wechseln</h3><code>.playerbots rndbot change_strategy</code><p>Würfelt neu, ob RandomBots eher RPG-/Quest-/Grind-Verhalten nutzen.</p></article>
+        <article class="command-card"><h3>Performance Monitor</h3><code>.playerbots pmon</code><p>Zeigt Playerbot-Performancewerte. Unterbefehle: <code>reset</code>, <code>tick</code>, <code>stack</code>, <code>toggle</code>.</p></article>
+        <article class="command-card"><h3>Debug BG</h3><code>.playerbots debug bg</code><p>Debug-Ausgabe für Battleground-Taktiken. Nur GM.</p></article>
+      </div>
+    </details>
+
+    <details class="nested-options">
+      <summary>Account-Verknüpfung</summary>
+      <div class="command-grid">
+        <article class="command-card"><h3>Sicherheitsschlüssel setzen</h3><code>.playerbots account setKey SCHLUESSEL</code><p>Setzt einen Schlüssel, mit dem ein anderer Account verknüpft werden kann.</p></article>
+        <article class="command-card"><h3>Account verknüpfen</h3><code>.playerbots account link ACCOUNT SCHLUESSEL</code><p>Verknüpft einen Account, damit dessen Bots je nach Config genutzt werden dürfen.</p></article>
+        <article class="command-card"><h3>Verknüpfungen anzeigen</h3><code>.playerbots account linkedAccounts</code><p>Zeigt die aktuell verknüpften Accounts.</p></article>
+        <article class="command-card"><h3>Account trennen</h3><code>.playerbots account unlink ACCOUNT</code><p>Entfernt eine Account-Verknüpfung.</p></article>
+      </div>
+    </details>
+
+    <details class="nested-options">
+      <summary>Grundsteuerung im Chat</summary>
+      <div class="command-grid">
+        <article class="command-card"><h3>Angreifen</h3><code>/w BOTNAME attack</code><p>Bot greift dein aktuelles Ziel an.</p></article>
+        <article class="command-card"><h3>Folgen</h3><code>/w BOTNAME follow</code><p>Bot folgt dir. Varianten: <code>follow far</code>, <code>follow near</code>, <code>follow reset</code>, <code>follow auto</code>, <code>follow info</code>.</p></article>
+        <article class="command-card"><h3>Stehen bleiben</h3><code>/w BOTNAME stay</code><p>Bot bleibt an seiner Position.</p></article>
+        <article class="command-card"><h3>Assistieren</h3><code>/w BOTNAME assist</code><p>Bot unterstützt dein Ziel, vor allem im Nahkampf.</p></article>
+        <article class="command-card"><h3>Crowd Control</h3><code>/w BOTNAME neutralize</code><p>Bot versucht dein Ziel zu kontrollieren, z.B. mit Polymorph, Shackle oder Hibernate.</p></article>
+        <article class="command-card"><h3>Pullen</h3><code>/w BOTNAME pull</code><p>Bot versucht dein Ziel zu pullen, wenn er passende Tank-/Pull-Logik hat. Varianten: <code>pull test</code>, <code>pull ready</code>.</p></article>
+        <article class="command-card"><h3>Zauber wirken</h3><code>/w BOTNAME cast ZAUBER</code><p>Wirkt einen Zauber nach Name, Teilname, Spell-ID oder Spelllink. Kurzform: <code>c</code>.</p></article>
+        <article class="command-card"><h3>Status</h3><code>/w BOTNAME stats</code><p>Zeigt Gold, freie Taschenplätze und geschätzte Reparaturkosten.</p></article>
+        <article class="command-card"><h3>Reset</h3><code>/w BOTNAME reset</code><p>Setzt Zustände, Befehle und Lootlisten des Bots zurück.</p></article>
+        <article class="command-card"><h3>Spells anzeigen</h3><code>/w BOTNAME spells</code><p>Bot listet bekannte Zauber.</p></article>
+      </div>
+    </details>
+
+    <details class="nested-options">
+      <summary>Kampfrollen und Orders</summary>
+      <div class="command-grid">
+        <article class="command-card"><h3>Orders anzeigen</h3><code>/w BOTNAME orders</code><p>Zeigt aktuelle Kampfrollen und Verzögerungen.</p></article>
+        <article class="command-card"><h3>Tank</h3><code>/w BOTNAME orders combat tank</code><p>Bot versucht Ziele zu binden und Bedrohung aufzubauen.</p></article>
+        <article class="command-card"><h3>Main Tank</h3><code>/w BOTNAME orders combat maintank</code><p>Wie Tank, wird aber als priorisiertes Heilziel behandelt.</p></article>
+        <article class="command-card"><h3>Heiler</h3><code>/w BOTNAME orders combat heal</code><p>Bot konzentriert sich auf Heilung und hält Bedrohung niedrig.</p></article>
+        <article class="command-card"><h3>Main Heal</h3><code>/w BOTNAME orders combat mainheal</code><p>Bot heilt Main Tanks besonders priorisiert.</p></article>
+        <article class="command-card"><h3>Assist</h3><code>/w BOTNAME orders combat assist TANKNAME</code><p>Bot macht Schaden auf Ziele des angegebenen Tanks/Spielers.</p></article>
+        <article class="command-card"><h3>Protect</h3><code>/w BOTNAME orders combat protect HEILERNAME</code><p>Bot schützt das angegebene Ziel, wenn es angegriffen wird.</p></article>
+        <article class="command-card"><h3>Passiv</h3><code>/w BOTNAME orders combat passive</code><p>Bot greift nicht aktiv an und wirkt keine Kampfzauber, auch wenn er angegriffen wird.</p></article>
+        <article class="command-card"><h3>Resistenzen</h3><code>/w BOTNAME orders combat resistfire</code><p>Varianten: <code>resistfire</code>, <code>resistfrost</code>, <code>resistnature</code>, <code>resistshadow</code>.</p></article>
+        <article class="command-card"><h3>Verzögerung</h3><code>/w BOTNAME orders delay 2</code><p>Bot wartet 0 bis 10 Sekunden, bevor er in den Kampf eingreift.</p></article>
+        <article class="command-card"><h3>Orders fortsetzen</h3><code>/w BOTNAME orders resume</code><p>Stellt Befehle wieder her, die vor Logout/Neustart aktiv waren.</p></article>
+        <article class="command-card"><h3>Orders löschen</h3><code>/w BOTNAME orders combat reset</code><p>Entfernt Kampfrollen und Zielbindungen.</p></article>
+      </div>
+    </details>
+
+    <details class="nested-options">
+      <summary>Loot, Objekte, Handel und Inventar</summary>
+      <div class="command-grid">
+        <article class="command-card"><h3>Sammelstatus</h3><code>/w BOTNAME collect</code><p>Zeigt aktuelle Sammel-/Loot-Einstellungen.</p></article>
+        <article class="command-card"><h3>Sammeln setzen</h3><code>/w BOTNAME collect loot quest profession skin objects</code><p>Unterbefehle können kombiniert werden. <code>none</code> entfernt Sammeloptionen, <code>distance:30</code> setzt Distanz.</p></article>
+        <article class="command-card"><h3>Objekte suchen</h3><code>/w BOTNAME survey</code><p>Listet sichtbare GameObjects, Kräuter, Erze, Kisten und Questobjekte in der Nähe.</p></article>
+        <article class="command-card"><h3>Zu Objekt laufen</h3><code>/w BOTNAME find [GAMEOBJECT LINK]</code><p>Bot läuft zum Objekt und wartet dort.</p></article>
+        <article class="command-card"><h3>Objekt holen</h3><code>/w BOTNAME get [GAMEOBJECT LINK]</code><p>Bot holt das Objekt und kommt zurück.</p></article>
+        <article class="command-card"><h3>Item benutzen</h3><code>/w BOTNAME use [ITEM LINK]</code><p>Nutzt ein Item. Varianten: auf Ziel, auf Ausrüstung oder auf GameObject. Kurzform: <code>u</code>.</p></article>
+        <article class="command-card"><h3>Ausrüsten</h3><code>/w BOTNAME equip [ITEM LINK]</code><p>Legt ein Item an. Kurzform: <code>e</code>.</p></article>
+        <article class="command-card"><h3>Autoequip</h3><code>/w BOTNAME equip auto on</code><p>Varianten: <code>on</code>, <code>off</code>, <code>once</code>, <code>info</code>. Steuert automatische Ausrüstung.</p></article>
+        <article class="command-card"><h3>Verkaufen</h3><code>/w BOTNAME sell [ITEM LINK]</code><p>Bot verkauft Items beim nächsten passenden Händler. <code>sell all</code> verkauft normale nutzlose weiße Items.</p></article>
+        <article class="command-card"><h3>Kaufen</h3><code>/w BOTNAME buy [ITEM LINK]</code><p>Bot kauft Item beim ausgewählten Händler, sofern verfügbar und bezahlbar.</p></article>
+        <article class="command-card"><h3>Item zerstören</h3><code>/w BOTNAME drop [ITEM LINK]</code><p>Zerstört das Item dauerhaft.</p></article>
+        <article class="command-card"><h3>Reparieren</h3><code>/w BOTNAME repair all</code><p>Repariert beschädigte Ausrüstung beim nächsten Schmied/Händler. Variante: <code>repair [ITEM LINK]</code>.</p></article>
+        <article class="command-card"><h3>Bank anzeigen</h3><code>/w BOTNAME bank</code><p>Zeigt Bankbestand.</p></article>
+        <article class="command-card"><h3>Bank einlagern</h3><code>/w BOTNAME bank deposit [ITEM LINK]</code><p>Legt Item(s) in die Bank.</p></article>
+        <article class="command-card"><h3>Bank entnehmen</h3><code>/w BOTNAME bank withdraw [ITEM LINK]</code><p>Holt Item(s) aus der Bank.</p></article>
+      </div>
+    </details>
+
+    <details class="nested-options">
+      <summary>Quests, Berufe, Mail und Auktionen</summary>
+      <div class="command-grid">
+        <article class="command-card"><h3>Quests anzeigen</h3><code>/w BOTNAME quest</code><p>Zeigt aktuelle Bot-Quests.</p></article>
+        <article class="command-card"><h3>Quest annehmen</h3><code>/w BOTNAME quest add [QUESTLINK]</code><p>Fügt eine Quest hinzu. Kurzform: <code>quest a</code>.</p></article>
+        <article class="command-card"><h3>Quest abbrechen</h3><code>/w BOTNAME quest drop [QUESTLINK]</code><p>Entfernt eine Quest. Kurzform: <code>quest d</code>.</p></article>
+        <article class="command-card"><h3>Quest abgeben</h3><code>/w BOTNAME quest end</code><p>Gibt eine fertige Quest ab, wenn ein passender Questgeber verfügbar ist.</p></article>
+        <article class="command-card"><h3>Questbericht</h3><code>/w BOTNAME quest report</code><p>Bot meldet fehlende Items, Kreaturen oder Objekte für offene Quests.</p></article>
+        <article class="command-card"><h3>Quests holen</h3><code>/w BOTNAME quest fetch</code><p>Bot prüft den anvisierten Questgeber und nimmt passende Quests an.</p></article>
+        <article class="command-card"><h3>Quest abschließen</h3><code>/w BOTNAME quest complete [QUESTLINK]</code><p>Automatisiert selektive Questabschlüsse, sofern vom Modul erlaubt.</p></article>
+        <article class="command-card"><h3>Berufe anzeigen</h3><code>/w BOTNAME craft alchemy</code><p>Listen: alchemy/a, blacksmithing/b, cooking/c, engineering/e, firstaid/f, inscription/i, jewelcrafting/j, leatherworking/l, magic/m, smelting/s, tailoring/t.</p></article>
+        <article class="command-card"><h3>Herstellen</h3><code>/w BOTNAME craft [RECIPE]</code><p>Stellt ein Rezept her. Mit <code>all</code> werden alle möglichen Aufladungen/Herstellungen ausgeführt.</p></article>
+        <article class="command-card"><h3>Verarbeiten</h3><code>/w BOTNAME process disenchant [ITEM LINK]</code><p>Varianten: <code>disenchant</code>/<code>d</code>, <code>mill</code>/<code>m</code>, <code>prospect</code>/<code>p</code>.</p></article>
+        <article class="command-card"><h3>Verzauberungen</h3><code>/w BOTNAME enchant</code><p>Listet bekannte Verzauberungen.</p></article>
+        <article class="command-card"><h3>Verzaubern</h3><code>/w BOTNAME enchant [SPELLLINK][ITEM LINK]</code><p>Verzaubert ein handelbares Item oder ein Item im Tradefenster.</p></article>
+        <article class="command-card"><h3>Auktionen anzeigen</h3><code>/w BOTNAME auction</code><p>Bot zeigt seine aktiven Auktionen.</p></article>
+        <article class="command-card"><h3>Auktion vormerken</h3><code>/w BOTNAME auction add [ITEM LINK]</code><p>Bot merkt ein Item für spätere Auktionserstellung vor.</p></article>
+        <article class="command-card"><h3>Auktion entfernen</h3><code>/w BOTNAME auction remove [AUCTION LINK]</code><p>Bot merkt eine Auktion für spätere Stornierung vor.</p></article>
+        <article class="command-card"><h3>Posteingang</h3><code>/w BOTNAME mail inbox [MAILBOX]</code><p>Listet Bot-Post aus dem ausgewählten Briefkasten.</p></article>
+        <article class="command-card"><h3>Post-Gold holen</h3><code>/w BOTNAME mail getcash [MAIL ID]</code><p>Holt Geld aus ausgewählten Mails.</p></article>
+        <article class="command-card"><h3>Post-Items holen</h3><code>/w BOTNAME mail getitem [MAIL ID]</code><p>Holt Items aus ausgewählten Mails.</p></article>
+        <article class="command-card"><h3>Post löschen</h3><code>/w BOTNAME mail delete [MAIL ID]</code><p>Löscht ausgewählte Mails.</p></article>
+      </div>
+    </details>
+
+    <details class="nested-options">
+      <summary>Talente, Skills, Begleiter und GM-Hilfen</summary>
+      <div class="command-grid">
+        <article class="command-card"><h3>Talente anzeigen</h3><code>/w BOTNAME talent</code><p>Listet aktive Talente, Glyphen, freie Punkte und Resetkosten.</p></article>
+        <article class="command-card"><h3>Talent lernen</h3><code>/w BOTNAME talent learn [TALENT LINK]</code><p>Lernt ein Talent aus einem Link.</p></article>
+        <article class="command-card"><h3>Talente zurücksetzen</h3><code>/w BOTNAME talent reset</code><p>Setzt alle Talente zurück.</p></article>
+        <article class="command-card"><h3>Talentprofil anzeigen</h3><code>/w BOTNAME talent spec</code><p>Zeigt verfügbare Skillungsprofile der Klasse.</p></article>
+        <article class="command-card"><h3>Talentprofil setzen</h3><code>/w BOTNAME talent spec NUMMER</code><p>Setzt ein verfügbares Skillungsprofil.</p></article>
+        <article class="command-card"><h3>Skills anzeigen</h3><code>/w BOTNAME skill</code><p>Listet primäre Berufsskills.</p></article>
+        <article class="command-card"><h3>Skill lernen</h3><code>/w BOTNAME skill learn [TRAINING LINK]</code><p>Lernt einen Skill oder Zauber beim ausgewählten Trainer.</p></article>
+        <article class="command-card"><h3>Skill verlernen</h3><code>/w BOTNAME skill unlearn [PROFESSION LINK]</code><p>Verlernt einen Primärberuf samt zugehörigen Zaubern.</p></article>
+        <article class="command-card"><h3>Pet freilassen</h3><code>/w BOTNAME pet abandon</code><p>Jägerbot gibt den aktiven Begleiter auf.</p></article>
+        <article class="command-card"><h3>Pet zähmen</h3><code>/w BOTNAME pet tame TARGET</code><p>Jägerbot zähmt das ausgewählte Tier, falls möglich.</p></article>
+        <article class="command-card"><h3>Pet-Zauber</h3><code>/w BOTNAME pet spells</code><p>Zeigt bekannte Begleiterzauber.</p></article>
+        <article class="command-card"><h3>Pet zaubern</h3><code>/w BOTNAME pet cast ZAUBER</code><p>Begleiter wirkt einen Zauber per Name, ID oder Link.</p></article>
+        <article class="command-card"><h3>Pet Autocast</h3><code>/w BOTNAME pet toggle ZAUBER</code><p>Schaltet Autocast für einen Begleiterzauber um.</p></article>
+        <article class="command-card"><h3>Pet Haltung</h3><code>/w BOTNAME pet react defensive</code><p>Varianten: aggressive/a, defensive/d, passive/p. <code>pet state</code> zeigt die aktuelle Haltung.</p></article>
+        <article class="command-card"><h3>GM Talentcheck</h3><code>/w BOTNAME gm check talent spec</code><p>Prüft Talentprofile in der Datenbank. Nur GM.</p></article>
+        <article class="command-card"><h3>GM Ziele anzeigen</h3><code>/w BOTNAME gm target loot</code><p>Varianten: <code>loot</code> oder <code>combat</code>. Zeigt Bot-Ziele. Nur GM.</p></article>
+        <article class="command-card"><h3>GM Questdaten</h3><code>/w BOTNAME gm quest add [QUESTLINK]</code><p>Varianten: <code>add</code> oder <code>del</code>. Pflegt Quests für Auto-Complete. Nur GM.</p></article>
+        <article class="command-card"><h3>GM Chat-Debug</h3><code>/w BOTNAME gm chat</code><p>Zeigt, welche Befehle der Bot empfängt und warum er sie ggf. ablehnt.</p></article>
+      </div>
+    </details>
+  </section>
 </section>
 {% endif %}
 {% endblock %}

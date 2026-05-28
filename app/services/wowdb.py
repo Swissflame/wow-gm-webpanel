@@ -212,6 +212,174 @@ def delete_character(cfg: dict, realm: str, guid: int) -> str:
     return char["name"]
 
 
+CHARACTER_GUID_TABLES = {
+    "character_account_data": "guid", "character_achievement": "guid", "character_achievement_progress": "guid",
+    "character_action": "guid", "character_aura": "guid", "character_banned": "guid",
+    "character_battleground_data": "guid", "character_declinedname": "guid",
+    "character_equipmentsets": "guid", "character_gifts": "guid", "character_glyphs": "guid",
+    "character_homebind": "guid",
+    "character_queststatus": "guid", "character_queststatus_daily": "guid",
+    "character_queststatus_monthly": "guid", "character_queststatus_rewarded": "guid",
+    "character_queststatus_seasonal": "guid", "character_queststatus_weekly": "guid",
+    "character_reputation": "guid", "character_skills": "guid",
+    "character_spell": "guid", "character_spell_cooldown": "guid", "character_stats": "guid",
+    "character_talent": "guid", "character_void_storage": "guid",
+}
+
+
+def transfer_character(cfg: dict, source_realm: str, guid: int, target_realm: str, action: str, target_name: str) -> dict:
+    if source_realm not in {"normal", "playerbot"} or target_realm not in {"normal", "playerbot"}:
+        raise ValueError("Unbekannter Realm.")
+    if action not in {"copy", "move"}:
+        raise ValueError("Aktion muss copy oder move sein.")
+    target_name = target_name.strip()
+    if not target_name or len(target_name) > 12:
+        raise ValueError("Zielname muss 1 bis 12 Zeichen haben.")
+
+    mysql = cfg["mysql"]
+    source_db = character_database(mysql, source_realm)
+    target_db = character_database(mysql, target_realm)
+    source_engine = engine_for(mysql, source_db)
+    target_engine = engine_for(mysql, target_db)
+    try:
+        with source_engine.begin() as source, target_engine.begin() as target:
+            char = source.execute(text("SELECT * FROM characters WHERE guid=:guid"), {"guid": int(guid)}).mappings().first()
+            if not char:
+                raise ValueError("Charakter nicht gefunden.")
+            if int(char.get("online") or 0) != 0:
+                raise ValueError("Charakter ist noch online.")
+            existing_name = target.execute(text("SELECT guid FROM characters WHERE name=:name"), {"name": target_name}).first()
+            if existing_name:
+                raise ValueError(f"Im Zielrealm existiert bereits ein Charakter mit dem Namen {target_name}.")
+
+            new_guid = next_id(target, "characters", "guid")
+            item_map = copy_character_items(source, target, int(guid), new_guid)
+            mail_map = copy_character_mails(source, target, int(guid), new_guid, item_map)
+
+            char_values = dict(char)
+            char_values["guid"] = new_guid
+            char_values["name"] = target_name
+            char_values["online"] = 0
+            insert_row(target, "characters", char_values)
+
+            for table, column in CHARACTER_GUID_TABLES.items():
+                copy_rows_with_guid(source, target, table, column, int(guid), new_guid, item_map=item_map, mail_map=mail_map)
+
+            copy_rows_with_guid(source, target, "character_inventory", "guid", int(guid), new_guid, item_map=item_map, mail_map=mail_map)
+
+            if action == "move":
+                delete_character_rows(source, int(guid))
+                source.execute(text("DELETE FROM characters WHERE guid=:guid"), {"guid": int(guid)})
+        return {"new_guid": new_guid, "name": target_name, "target_realm": target_realm, "target_realm_label": "Playerbot-Realm" if target_realm == "playerbot" else "Normal-Realm"}
+    finally:
+        source_engine.dispose()
+        target_engine.dispose()
+
+
+def next_id(conn, table: str, column: str) -> int:
+    value = conn.execute(text(f"SELECT COALESCE(MAX({column}), 0) + 1 FROM {table}")).scalar()
+    return int(value or 1)
+
+
+def table_columns(conn, table: str) -> set[str]:
+    try:
+        return {row["Field"] for row in conn.execute(text(f"DESCRIBE {table}")).mappings()}
+    except Exception:
+        return set()
+
+
+def insert_row(conn, table: str, values: dict):
+    columns = [column for column in values.keys() if column in table_columns(conn, table)]
+    if not columns:
+        return
+    binds = {column: values[column] for column in columns}
+    names = ", ".join(columns)
+    params = ", ".join(f":{column}" for column in columns)
+    conn.execute(text(f"INSERT INTO {table} ({names}) VALUES ({params})"), binds)
+
+
+def copy_rows_with_guid(source, target, table: str, column: str, old_guid: int, new_guid: int, item_map: dict[int, int], mail_map: dict[int, int]):
+    source_columns = table_columns(source, table)
+    target_columns = table_columns(target, table)
+    if not source_columns or not target_columns or column not in source_columns:
+        return
+    rows_to_copy = source.execute(text(f"SELECT * FROM {table} WHERE {column}=:guid"), {"guid": old_guid}).mappings().all()
+    for row in rows_to_copy:
+        values = dict(row)
+        values[column] = new_guid
+        for item_column in ("item", "bag", "itemguid", "item_guid"):
+            if item_column in values and values[item_column] in item_map:
+                values[item_column] = item_map[values[item_column]]
+        for mail_column in ("mail_id", "mailId", "id"):
+            if table != "mail" and mail_column in values and values[mail_column] in mail_map:
+                values[mail_column] = mail_map[values[mail_column]]
+        insert_row(target, table, values)
+
+
+def copy_character_items(source, target, old_guid: int, new_guid: int) -> dict[int, int]:
+    item_columns = table_columns(source, "item_instance")
+    if not item_columns or not table_columns(target, "item_instance"):
+        return {}
+    item_ids: set[int] = set()
+    if table_columns(source, "character_inventory"):
+        for row in source.execute(text("SELECT item, bag FROM character_inventory WHERE guid=:guid"), {"guid": old_guid}).mappings():
+            for value in (row.get("item"), row.get("bag")):
+                if value:
+                    item_ids.add(int(value))
+    if table_columns(source, "mail") and table_columns(source, "mail_items"):
+        for row in source.execute(text("""
+            SELECT mi.item_guid
+            FROM mail_items mi JOIN mail m ON m.id = mi.mail_id
+            WHERE m.receiver=:guid
+        """), {"guid": old_guid}).mappings():
+            if row.get("item_guid"):
+                item_ids.add(int(row["item_guid"]))
+    item_map: dict[int, int] = {}
+    next_item_guid = next_id(target, "item_instance", "guid")
+    for old_item in sorted(item_ids):
+        row = source.execute(text("SELECT * FROM item_instance WHERE guid=:guid"), {"guid": old_item}).mappings().first()
+        if not row:
+            continue
+        new_item = next_item_guid
+        next_item_guid += 1
+        item_map[old_item] = new_item
+        values = dict(row)
+        values["guid"] = new_item
+        if "owner_guid" in values:
+            values["owner_guid"] = new_guid
+        insert_row(target, "item_instance", values)
+    return item_map
+
+
+def copy_character_mails(source, target, old_guid: int, new_guid: int, item_map: dict[int, int]) -> dict[int, int]:
+    if not table_columns(source, "mail") or not table_columns(target, "mail"):
+        return {}
+    mail_map: dict[int, int] = {}
+    next_mail_id = next_id(target, "mail", "id")
+    mails = source.execute(text("SELECT * FROM mail WHERE receiver=:guid"), {"guid": old_guid}).mappings().all()
+    for mail in mails:
+        old_mail = int(mail["id"])
+        new_mail = next_mail_id
+        next_mail_id += 1
+        mail_map[old_mail] = new_mail
+        values = dict(mail)
+        values["id"] = new_mail
+        values["receiver"] = new_guid
+        if values.get("sender") == old_guid:
+            values["sender"] = new_guid
+        insert_row(target, "mail", values)
+    if table_columns(source, "mail_items") and table_columns(target, "mail_items"):
+        for old_mail, new_mail in mail_map.items():
+            rows_to_copy = source.execute(text("SELECT * FROM mail_items WHERE mail_id=:id"), {"id": old_mail}).mappings().all()
+            for row in rows_to_copy:
+                values = dict(row)
+                values["mail_id"] = new_mail
+                if values.get("item_guid") in item_map:
+                    values["item_guid"] = item_map[values["item_guid"]]
+                insert_row(target, "mail_items", values)
+    return mail_map
+
+
 def account_table_columns(mysql_cfg: dict, auth_db: str, table: str = "account") -> set[str]:
     return {row["Field"] for row in rows(mysql_cfg, auth_db, f"DESCRIBE {table}")}
 

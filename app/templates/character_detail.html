@@ -42,6 +42,32 @@
     <button class="primary">Speichern</button>
   </form>
 
+  <form method="post" action="/characters/{{ character.realm_key }}/{{ character.guid }}/transfer" class="panel account-edit character-transfer">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <h2>Charakter kopieren oder verschieben</h2>
+    <p>Der Charakter wird inklusive Inventar, Ausrüstung, Quests, Ruf, Skills, Zaubern, Erfolgen und Post in den Zielrealm übertragen. Wenn er online ist, bekommt der Realm eine Warnmeldung und der Charakter wird nach 20 Sekunden ausgeloggt.</p>
+    <label>Aktion
+      <select name="action">
+        <option value="copy">Kopieren: Quelle bleibt erhalten</option>
+        <option value="move">Verschieben: Quelle wird nach erfolgreicher Kopie gelöscht</option>
+      </select>
+    </label>
+    <label>Zielrealm
+      <select name="target_realm">
+        {% for key, info in realms.items() %}
+        {% if key != character.realm_key %}<option value="{{ key }}">{{ _(info.label) }}</option>{% endif %}
+        {% endfor %}
+      </select>
+    </label>
+    <label>Zielname
+      <input name="target_name" value="{{ character.name }}" maxlength="12" required>
+    </label>
+    <label>Zur Bestätigung Charakternamen eingeben
+      <input name="confirm" placeholder="{{ character.name }}" autocomplete="off" required>
+    </label>
+    <button class="primary">Charakter übertragen</button>
+  </form>
+
   <form method="post" action="/characters/{{ character.realm_key }}/{{ character.guid }}/delete" class="panel account-delete danger">
     <input type="hidden" name="csrf" value="{{ csrf }}">
     <h2>Charakter löschen</h2>

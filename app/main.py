@@ -6,6 +6,7 @@ from starlette.middleware.sessions import SessionMiddleware
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 from pathlib import Path
+import time
 
 from .database import init_db, get_db
 from .models import PanelUser
@@ -59,6 +60,7 @@ def create_app() -> FastAPI:
     app.add_api_route("/characters", characters, methods=["GET"], response_class=HTMLResponse)
     app.add_api_route("/characters/{realm}/{guid}", character_detail, methods=["GET"], response_class=HTMLResponse)
     app.add_api_route("/characters/{realm}/{guid}/save", character_save, methods=["POST"])
+    app.add_api_route("/characters/{realm}/{guid}/transfer", character_transfer, methods=["POST"])
     app.add_api_route("/characters/{realm}/{guid}/delete", character_delete, methods=["POST"])
     app.add_api_route("/gm", gm_console, methods=["GET"], response_class=HTMLResponse)
     app.add_api_route("/gm/favorites", gm_favorites, methods=["POST"])
@@ -321,6 +323,57 @@ def character_save(request: Request, realm: str, guid: int, db: Session = Depend
     except Exception as exc:
         request.session["character_flash"] = f"Fehler: {exc}"
     return RedirectResponse(f"/characters/{realm}/{guid}", status_code=303)
+
+
+def character_transfer(request: Request, realm: str, guid: int, db: Session = Depends(get_db), user: PanelUser = Depends(require_level(3)),
+                       csrf: str = Form(...), action: str = Form("copy"), target_realm: str = Form(...),
+                       target_name: str = Form(""), confirm: str = Form("")):
+    if not verify_csrf(request, csrf):
+        raise HTTPException(400, "CSRF")
+    if action not in {"copy", "move"} or target_realm not in REALMS:
+        raise HTTPException(400, "Ungültige Transferdaten")
+    if target_realm == realm:
+        request.session["character_flash"] = "Transfer abgebrochen: Bitte einen anderen Zielrealm auswählen."
+        return RedirectResponse(f"/characters/{realm}/{guid}", status_code=303)
+    cfg = all_config(db)
+    character = wowdb.character_detail(cfg, realm, guid)
+    if not character:
+        raise HTTPException(404, "Charakter nicht gefunden")
+    if confirm.strip().upper() != character["name"].upper():
+        request.session["character_flash"] = "Transfer abgebrochen: Bitte den Charakternamen exakt bestätigen."
+        return RedirectResponse(f"/characters/{realm}/{guid}", status_code=303)
+
+    notices = []
+    if character.get("online"):
+        message = f"Charakter {character['name']} wird in 20 Sekunden fuer Kopieren/Verschieben ausgeloggt."
+        notify_result = execute_gm_command(db, cfg, realm, f"notify {message}")
+        record_command(db, user.id, realm, f"notify {message}", notify_result)
+        notices.append(notify_result)
+        time.sleep(20)
+        kick_result = execute_gm_command(db, cfg, realm, f"kick {character['name']} Charaktertransfer durch GM-Webpanel")
+        record_command(db, user.id, realm, f"kick {character['name']}", kick_result)
+        notices.append(kick_result)
+        for _ in range(10):
+            time.sleep(1)
+            refreshed = wowdb.character_detail(cfg, realm, guid)
+            if not refreshed or not refreshed.get("online"):
+                break
+        character = wowdb.character_detail(cfg, realm, guid)
+        if character and character.get("online"):
+            request.session["character_flash"] = "Transfer abgebrochen: Charakter ist nach Warnung/Kick noch online. Bitte kurz später erneut versuchen."
+            return RedirectResponse(f"/characters/{realm}/{guid}", status_code=303)
+
+    try:
+        result = wowdb.transfer_character(cfg, realm, guid, target_realm, action, target_name.strip() or character["name"])
+        log_action(db, user.id, f"character_{action}", f"{realm}:{guid}->{target_realm}:{result['new_guid']}", result["name"], request.client.host if request.client else None)
+    except Exception as exc:
+        request.session["character_flash"] = f"Transfer fehlgeschlagen: {exc}"
+        return RedirectResponse(f"/characters/{realm}/{guid}", status_code=303)
+
+    verb = "kopiert" if action == "copy" else "verschoben"
+    extra = (" Hinweise: " + " ".join(notices)) if notices else ""
+    request.session["character_flash"] = f"Charakter {result['name']} wurde nach {result['target_realm_label']} {verb}. Neue GUID: {result['new_guid']}.{extra}"
+    return RedirectResponse(f"/characters/{target_realm}/{result['new_guid']}", status_code=303)
 
 
 def character_delete(request: Request, realm: str, guid: int, db: Session = Depends(get_db), user: PanelUser = Depends(require_level(3)),

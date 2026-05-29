@@ -2,109 +2,171 @@
 {% if error %}<section class="notice"><strong>{{ _("Connection problem") }}</strong><p>{{ error }}</p></section>{% endif %}
 
 <section class="items-page">
-  <form class="panel item-filters" method="get">
-    <label>Suche / Itemnummer
-      <input name="q" value="{{ filters.q }}" placeholder="Name oder Entry-ID">
-    </label>
-    <label>Kategorie
-      <select name="item_class">
-        <option value="">Alle Kategorien</option>
-        {% for cls in item_classes %}
-        <option value="{{ cls.id }}" {% if filters.item_class|string == cls.id|string %}selected{% endif %}>{{ cls.label }}</option>
-        {% endfor %}
-      </select>
-    </label>
-    <label>Unterkategorie
-      <select name="subclass">
-        <option value="">Alle Unterkategorien</option>
-        {% for cls in item_classes %}
-          {% if not filters.item_class or filters.item_class|string == cls.id|string %}
-            {% for sub_id, sub_label in cls.subclasses.items() %}
-            <option value="{{ sub_id }}" {% if filters.subclass|string == sub_id|string %}selected{% endif %}>{{ cls.label }} &gt; {{ sub_label }}</option>
-            {% endfor %}
-          {% endif %}
-        {% endfor %}
-      </select>
-    </label>
-    <label>Qualität
-      <select name="quality">
-        <option value="">Alle</option>
-        {% for quality, label in qualities.items() %}
-        <option value="{{ quality }}" {% if filters.quality|string == quality|string %}selected{% endif %}>{{ quality }} - {{ label }}</option>
-        {% endfor %}
-      </select>
-    </label>
-    <label>Itemlevel von
-      <input name="min_level" type="number" min="0" value="{{ filters.min_level }}">
-    </label>
-    <label>Itemlevel bis
-      <input name="max_level" type="number" min="0" value="{{ filters.max_level }}">
-    </label>
-    <label>Sortierung
-      <select name="sort">
-        <option value="group" {% if filters.sort == "group" %}selected{% endif %}>Kategorie, Unterkategorie, Level</option>
-        <option value="level_desc" {% if filters.sort == "level_desc" %}selected{% endif %}>Höchstes Itemlevel zuerst</option>
-        <option value="name" {% if filters.sort == "name" %}selected{% endif %}>Name</option>
-      </select>
-    </label>
-    <label>Pro Seite
-      <select name="limit">
-        {% for n in [50,100,200,500] %}
-        <option value="{{ n }}" {% if limit == n %}selected{% endif %}>{{ n }}</option>
-        {% endfor %}
-      </select>
-    </label>
-    <button class="primary">Filtern</button>
-  </form>
-
-  <section class="panel item-summary">
-    <div>
+  <div class="items-workbench">
+    <aside class="panel item-filter-rail">
       <h2>Itemdatenbank</h2>
-      <p>{{ total }} Treffer · Seite {{ page }} von {{ pages }}</p>
-    </div>
-    <div class="chips">
-      <span>Rüstung &gt; Stoff</span>
-      <span>Rüstung &gt; Leder/Kette/Platte</span>
-      <span>Waffen</span>
-      <span>Taschen</span>
-      <span>Rezepte</span>
-      <span>Handwerkswaren</span>
-    </div>
-  </section>
+      <p class="hint">Deutsche Namen werden aus der AzerothCore-Locale-Tabelle gelesen. Falls der Server Iconnamen liefert, werden sie angezeigt; sonst bleibt bewusst ein Platzhalter.</p>
 
-  <table class="item-table">
-    <tr>
-      <th>Entry</th><th>Name</th><th>Kategorie</th><th>Unterkategorie</th><th>Qualität</th>
-      <th>Itemlevel</th><th>Benötigt</th><th>Slot</th><th>Stack</th><th>Taschenplätze</th><th>Verkauf</th>
-    </tr>
-    {% for item in items %}
-    <tr>
-      <td><code>{{ item.entry }}</code></td>
-      <td>
-        <strong class="quality-{{ item.Quality }}">{{ item.name }}</strong>
-        {% if item.description %}<small>{{ item.description }}</small>{% endif %}
-      </td>
-      <td>{{ item.class_label }}</td>
-      <td>{{ item.subclass_label }}</td>
-      <td>{{ item.quality_label }}</td>
-      <td>{{ item.ItemLevel }}</td>
-      <td>{{ item.RequiredLevel }}</td>
-      <td>{{ item.inventory_label }}</td>
-      <td>{{ item.stackable }}</td>
-      <td>{{ item.ContainerSlots }}</td>
-      <td>{{ item.SellPrice }}</td>
-    </tr>
-    {% endfor %}
-  </table>
-  {% if not items and not error %}<section class="panel"><p>Keine Items gefunden.</p></section>{% endif %}
+      <div class="quick-filters">
+        <a href="/items?item_class=4&subclass=1&sort=level_desc">Ruestung &gt; Stoff</a>
+        <a href="/items?item_class=4&subclass=2&sort=level_desc">Ruestung &gt; Leder</a>
+        <a href="/items?item_class=4&subclass=3&sort=level_desc">Ruestung &gt; Kette</a>
+        <a href="/items?item_class=4&subclass=4&sort=level_desc">Ruestung &gt; Platte</a>
+        <a href="/items?item_class=4&subclass=6&sort=level_desc">Schilde</a>
+        <a href="/items?item_class=2&sort=level_desc">Waffen</a>
+        <a href="/items?item_class=1&sort=level_desc">Taschen</a>
+        <a href="/items?item_class=9&sort=name">Rezepte</a>
+        <a href="/items?item_class=7&sort=name">Handwerkswaren</a>
+        <a href="/items?quality=4&sort=level_desc">Episch</a>
+      </div>
 
-  <form class="panel item-pager" method="get">
-    {% for key, value in filters.items() %}
-      {% if key != "page" %}<input type="hidden" name="{{ key }}" value="{{ value }}">{% endif %}
-    {% endfor %}
-    <button name="page" value="{{ [page - 1, 1]|max }}" {% if page <= 1 %}disabled{% endif %}>Zurück</button>
-    <span>Seite {{ page }} / {{ pages }}</span>
-    <button name="page" value="{{ [page + 1, pages]|min }}" {% if page >= pages %}disabled{% endif %}>Weiter</button>
-  </form>
+      <form class="item-filter-grid" method="get">
+        <label>Suche / Itemnummer
+          <input name="q" value="{{ filters.q }}" placeholder="Name, Originalname oder Entry-ID">
+        </label>
+        <label>Kategorie
+          <select name="item_class">
+            <option value="">Alle Kategorien</option>
+            {% for cls in item_classes %}
+            <option value="{{ cls.id }}" {% if filters.item_class|string == cls.id|string %}selected{% endif %}>{{ cls.label }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <label>Unterkategorie
+          <select name="subclass">
+            <option value="">Alle Unterkategorien</option>
+            {% for cls in item_classes %}
+              {% if not filters.item_class or filters.item_class|string == cls.id|string %}
+                {% for sub_id, sub_label in cls.subclasses.items() %}
+                <option value="{{ sub_id }}" {% if filters.subclass|string == sub_id|string %}selected{% endif %}>{{ cls.label }} &gt; {{ sub_label }}</option>
+                {% endfor %}
+              {% endif %}
+            {% endfor %}
+          </select>
+        </label>
+        <label>Qualitaet
+          <select name="quality">
+            <option value="">Alle Qualitaeten</option>
+            {% for quality, label in qualities.items() %}
+            <option value="{{ quality }}" {% if filters.quality|string == quality|string %}selected{% endif %}>{{ quality }} - {{ label }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <label>Ausrüstungsplatz
+          <select name="inventory_type">
+            <option value="">Alle Plaetze</option>
+            {% for inv_id, inv_label in inventory_types.items() %}
+            <option value="{{ inv_id }}" {% if filters.inventory_type|string == inv_id|string %}selected{% endif %}>{{ inv_id }} - {{ inv_label }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <label>Bindung
+          <select name="bonding">
+            <option value="">Alle Bindungen</option>
+            {% for bind_id, bind_label in bonding_types.items() %}
+            <option value="{{ bind_id }}" {% if filters.bonding|string == bind_id|string %}selected{% endif %}>{{ bind_id }} - {{ bind_label }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <div class="item-range">
+          <label>Itemlevel von
+            <input name="min_level" type="number" min="0" value="{{ filters.min_level }}">
+          </label>
+          <label>bis
+            <input name="max_level" type="number" min="0" value="{{ filters.max_level }}">
+          </label>
+        </div>
+        <div class="item-range">
+          <label>Benötigtes Level von
+            <input name="req_min" type="number" min="0" value="{{ filters.req_min }}">
+          </label>
+          <label>bis
+            <input name="req_max" type="number" min="0" value="{{ filters.req_max }}">
+          </label>
+        </div>
+        <label>Mindestens Taschenplätze
+          <input name="min_slots" type="number" min="0" value="{{ filters.min_slots }}">
+        </label>
+        <label>Stapelbar
+          <select name="stackable">
+            <option value="" {% if not filters.stackable %}selected{% endif %}>Alle Items</option>
+            <option value="stack" {% if filters.stackable == "stack" %}selected{% endif %}>Nur stapelbare Items</option>
+            <option value="single" {% if filters.stackable == "single" %}selected{% endif %}>Nur einzelne Items</option>
+          </select>
+        </label>
+        <label>Sortierung
+          <select name="sort">
+            <option value="group" {% if filters.sort == "group" %}selected{% endif %}>Kategorie, Unterkategorie, Level</option>
+            <option value="level_desc" {% if filters.sort == "level_desc" %}selected{% endif %}>Hoechstes Itemlevel zuerst</option>
+            <option value="name" {% if filters.sort == "name" %}selected{% endif %}>Name</option>
+            <option value="entry" {% if filters.sort == "entry" %}selected{% endif %}>Itemnummer</option>
+          </select>
+        </label>
+        <label>Treffer pro Seite
+          <select name="limit">
+            {% for n in [50,100,200,500] %}
+            <option value="{{ n }}" {% if limit == n %}selected{% endif %}>{{ n }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <input type="hidden" name="page" value="1">
+        <button class="primary">Filtern</button>
+        <a class="button" href="/items">Zuruecksetzen</a>
+      </form>
+    </aside>
+
+    <section class="panel item-results-panel">
+      <header class="item-results-head">
+        <div>
+          <h2>{{ total }} Treffer</h2>
+          <p>Seite {{ page }} von {{ pages }}</p>
+        </div>
+        <form class="item-pager compact-pager" method="get">
+          {% for key, value in filters.items() %}
+            {% if key != "page" %}<input type="hidden" name="{{ key }}" value="{{ value }}">{% endif %}
+          {% endfor %}
+          <button name="page" value="{{ [page - 1, 1]|max }}" {% if page <= 1 %}disabled{% endif %}>Zurueck</button>
+          <button name="page" value="{{ [page + 1, pages]|min }}" {% if page >= pages %}disabled{% endif %}>Weiter</button>
+        </form>
+      </header>
+
+      <div class="item-scroll">
+        <table class="item-table">
+          <tr>
+            <th>Icon</th><th>Entry</th><th>Name</th><th>Kategorie</th><th>Qualitaet</th>
+            <th>Itemlevel</th><th>Benötigt</th><th>Slot</th><th>Bindung</th><th>Stack</th><th>Plätze</th><th>Verkauf</th>
+          </tr>
+          {% for item in items %}
+          <tr>
+            <td>
+              <span class="item-icon" title="{{ item.icon_name or 'Kein Iconname' }}">
+                {% if item.icon_name %}<span>{{ item.icon_name[:2]|upper }}</span>{% else %}<span>?</span>{% endif %}
+              </span>
+            </td>
+            <td><code>{{ item.entry }}</code></td>
+            <td class="item-name-cell">
+              <div>
+                <strong class="quality-{{ item.Quality }}">{{ item.display_name }}</strong>
+                {% if item.display_name != item.name %}<small>Original: {{ item.name }}</small>{% endif %}
+                {% if item.display_description %}<small>{{ item.display_description }}</small>{% endif %}
+                {% if item.icon_name %}<small>Icon: {{ item.icon_name }}</small>{% endif %}
+              </div>
+            </td>
+            <td>{{ item.class_label }}<small>{{ item.subclass_label }}</small></td>
+            <td>{{ item.quality_label }}</td>
+            <td>{{ item.ItemLevel }}</td>
+            <td>{{ item.RequiredLevel }}</td>
+            <td>{{ item.inventory_label }}</td>
+            <td>{{ item.bonding_label }}</td>
+            <td>{{ item.stackable }}</td>
+            <td>{{ item.ContainerSlots }}</td>
+            <td>{{ item.SellPrice }}</td>
+          </tr>
+          {% endfor %}
+        </table>
+        {% if not items and not error %}<div class="empty-list">Keine Items gefunden.</div>{% endif %}
+      </div>
+    </section>
+  </div>
 </section>
 {% endblock %}

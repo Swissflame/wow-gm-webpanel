@@ -191,9 +191,22 @@ INVENTORY_TYPES = {
     24: "Munition", 25: "Wurfwaffe", 26: "Distanz rechts", 28: "Relikt",
 }
 
+BONDING_TYPES = {
+    0: "Nicht gebunden", 1: "Beim Aufheben gebunden", 2: "Beim Anlegen gebunden",
+    3: "Beim Benutzen gebunden", 4: "Questitem", 5: "Questitem",
+}
+
 
 def item_class_options() -> list[dict]:
     return [{"id": key, "label": value[0], "subclasses": value[1]} for key, value in sorted(ITEM_CLASSES.items())]
+
+
+def inventory_type_options() -> dict:
+    return INVENTORY_TYPES
+
+
+def bonding_options() -> dict:
+    return BONDING_TYPES
 
 
 def item_subclass_label(item_class: int, subclass: int) -> str:
@@ -212,70 +225,120 @@ def inventory_type_label(inventory_type: int) -> str:
     return INVENTORY_TYPES.get(int(inventory_type), str(inventory_type))
 
 
-def search_items(cfg: dict, filters: dict) -> dict:
+def bonding_label(bonding: int) -> str:
+    return BONDING_TYPES.get(int(bonding), str(bonding))
+
+
+def search_items(cfg: dict, filters: dict, lang: str = "de") -> dict:
     mysql = cfg["mysql"]
     limit = max(25, min(int(filters.get("limit") or 100), 500))
     page = max(1, int(filters.get("page") or 1))
     offset = (page - 1) * limit
     where = []
     params = {"limit": limit, "offset": offset}
+    use_de_locale = str(lang).lower().startswith("de")
+    locale_join = "LEFT JOIN item_template_locale l ON l.ID = i.entry AND l.locale = 'deDE'" if use_de_locale else ""
+    name_expr = "COALESCE(NULLIF(l.Name, ''), i.name)" if use_de_locale else "i.name"
+    desc_expr = "COALESCE(NULLIF(l.Description, ''), i.description)" if use_de_locale else "i.description"
 
     query = str(filters.get("q") or "").strip()
     if query:
         if query.isdigit():
-            where.append("(entry = :entry OR name LIKE :likeq)")
+            where.append(f"(i.entry = :entry OR {name_expr} LIKE :likeq OR i.name LIKE :likeq)")
             params["entry"] = int(query)
         else:
-            where.append("name LIKE :likeq")
+            where.append(f"({name_expr} LIKE :likeq OR i.name LIKE :likeq)")
         params["likeq"] = f"%{query}%"
 
     item_class = filters.get("item_class")
     if item_class not in (None, ""):
-        where.append("class = :class")
+        where.append("i.class = :class")
         params["class"] = int(item_class)
 
     subclass = filters.get("subclass")
     if subclass not in (None, ""):
-        where.append("subclass = :subclass")
+        where.append("i.subclass = :subclass")
         params["subclass"] = int(subclass)
 
     quality = filters.get("quality")
     if quality not in (None, ""):
-        where.append("Quality = :quality")
+        where.append("i.Quality = :quality")
         params["quality"] = int(quality)
 
     min_level = filters.get("min_level")
     if min_level not in (None, ""):
-        where.append("ItemLevel >= :min_level")
+        where.append("i.ItemLevel >= :min_level")
         params["min_level"] = int(min_level)
 
     max_level = filters.get("max_level")
     if max_level not in (None, ""):
-        where.append("ItemLevel <= :max_level")
+        where.append("i.ItemLevel <= :max_level")
         params["max_level"] = int(max_level)
 
-    clause = "WHERE " + " AND ".join(where) if where else ""
-    order = "class, subclass, ItemLevel, RequiredLevel, name"
-    if filters.get("sort") == "level_desc":
-        order = "ItemLevel DESC, RequiredLevel DESC, class, subclass, name"
-    elif filters.get("sort") == "name":
-        order = "name, ItemLevel, entry"
+    req_min = filters.get("req_min")
+    if req_min not in (None, ""):
+        where.append("i.RequiredLevel >= :req_min")
+        params["req_min"] = int(req_min)
 
-    count = scalar(mysql, mysql["world_db"], f"SELECT COUNT(*) FROM item_template {clause}", params) or 0
+    req_max = filters.get("req_max")
+    if req_max not in (None, ""):
+        where.append("i.RequiredLevel <= :req_max")
+        params["req_max"] = int(req_max)
+
+    inventory_type = filters.get("inventory_type")
+    if inventory_type not in (None, ""):
+        where.append("i.InventoryType = :inventory_type")
+        params["inventory_type"] = int(inventory_type)
+
+    bonding = filters.get("bonding")
+    if bonding not in (None, ""):
+        where.append("i.bonding = :bonding")
+        params["bonding"] = int(bonding)
+
+    min_slots = filters.get("min_slots")
+    if min_slots not in (None, ""):
+        where.append("i.ContainerSlots >= :min_slots")
+        params["min_slots"] = int(min_slots)
+
+    stackable = filters.get("stackable")
+    if stackable == "stack":
+        where.append("i.stackable > 1")
+    elif stackable == "single":
+        where.append("i.stackable <= 1")
+
+    clause = "WHERE " + " AND ".join(where) if where else ""
+    order = f"i.class, i.subclass, i.ItemLevel, i.RequiredLevel, {name_expr}, i.entry"
+    if filters.get("sort") == "level_desc":
+        order = f"i.ItemLevel DESC, i.RequiredLevel DESC, i.class, i.subclass, {name_expr}, i.entry"
+    elif filters.get("sort") == "name":
+        order = f"{name_expr}, i.ItemLevel, i.entry"
+    elif filters.get("sort") == "entry":
+        order = "i.entry"
+
+    count_sql = f"SELECT COUNT(*) FROM item_template i {locale_join} {clause}"
+    count = scalar(mysql, mysql["world_db"], count_sql, params) or 0
     sql = f"""
-    SELECT entry, name, class, subclass, Quality, ItemLevel, RequiredLevel, InventoryType,
-           stackable, ContainerSlots, SellPrice, bonding, description
-    FROM item_template
+    SELECT i.entry, i.name, {name_expr} AS display_name, {desc_expr} AS display_description,
+           i.class, i.subclass, i.Quality, i.ItemLevel,
+           i.RequiredLevel, i.InventoryType, i.stackable, i.ContainerSlots, i.SellPrice,
+           i.bonding, i.description, i.displayid, d.InventoryIcon_1 AS icon_name
+    FROM item_template i
+    {locale_join}
+    LEFT JOIN itemdisplayinfo_dbc d ON d.ID = i.displayid
     {clause}
     ORDER BY {order}
     LIMIT :limit OFFSET :offset
     """
     data = rows(mysql, mysql["world_db"], sql, params)
     for row in data:
+        row["display_name"] = row.get("display_name") or row.get("name") or f"Item {row['entry']}"
+        row["display_description"] = row.get("display_description") or row.get("description") or ""
         row["class_label"] = item_class_label(row["class"])
         row["subclass_label"] = item_subclass_label(row["class"], row["subclass"])
         row["quality_label"] = item_quality_label(row["Quality"])
         row["inventory_label"] = inventory_type_label(row["InventoryType"])
+        row["bonding_label"] = bonding_label(row["bonding"])
+        row["icon_slug"] = str(row.get("icon_name") or "").lower()
     return {"items": data, "total": int(count), "page": page, "limit": limit, "pages": max(1, (int(count) + limit - 1) // limit)}
 
 

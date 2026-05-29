@@ -346,12 +346,20 @@ def items(request: Request, db: Session = Depends(get_db), user: PanelUser = Dep
         "quality": request.query_params.get("quality", ""),
         "min_level": request.query_params.get("min_level", ""),
         "max_level": request.query_params.get("max_level", ""),
+        "req_min": request.query_params.get("req_min", ""),
+        "req_max": request.query_params.get("req_max", ""),
+        "inventory_type": request.query_params.get("inventory_type", ""),
+        "bonding": request.query_params.get("bonding", ""),
+        "min_slots": request.query_params.get("min_slots", ""),
+        "stackable": request.query_params.get("stackable", ""),
         "sort": request.query_params.get("sort", "group"),
         "limit": request.query_params.get("limit", "100"),
         "page": request.query_params.get("page", "1"),
     }
+    cfg = all_config(db)
+    lang = request.session.get("lang") or cfg.get("language") or "de"
     try:
-        result = wowdb.search_items(all_config(db), filters)
+        result = wowdb.search_items(cfg, filters, lang)
         error = None
     except Exception as exc:
         result = {"items": [], "total": 0, "page": 1, "limit": 100, "pages": 1}
@@ -366,6 +374,8 @@ def items(request: Request, db: Session = Depends(get_db), user: PanelUser = Dep
         "filters": filters,
         "item_classes": wowdb.item_class_options(),
         "qualities": wowdb.ITEM_QUALITIES,
+        "inventory_types": wowdb.inventory_type_options(),
+        "bonding_types": wowdb.bonding_options(),
         "error": error,
     }, db)
 

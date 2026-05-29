@@ -16,7 +16,7 @@
     <a href="/dashboard">{{ _("Dashboard") }}</a>
     <a href="/server">{{ _("Server") }}</a>
     <a href="/online">{{ _("Online Players") }}</a>
-    {% if user.gm_level >= 1 %}<a href="/accounts">{{ _("Accounts") }}</a><a href="/characters">{{ _("Characters") }}</a><a href="/gm">{{ _("GM Commands") }}</a>{% endif %}
+    {% if user.gm_level >= 1 %}<a href="/accounts">{{ _("Accounts") }}</a><a href="/characters">{{ _("Characters") }}</a><a href="/items">Items</a><a href="/gm">{{ _("GM Commands") }}</a>{% endif %}
     {% if user.gm_level >= 2 %}{% if selected_realm_info.has_ahbot %}<a href="/ahbot">AHBot</a>{% endif %}{% if selected_realm_info.has_playerbots %}<a href="/playerbots">Playerbots</a>{% endif %}<a href="/logs">{{ _("Logs") }}</a>{% endif %}
     {% if user.gm_level >= 3 %}<a href="/configs">{{ _("Configs") }}</a><a href="/backup">{{ _("Backup/Restore") }}</a><a href="/settings">{{ _("Settings") }}</a>{% endif %}
   </nav>

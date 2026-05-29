@@ -157,6 +157,128 @@ def character_database(mysql: dict, realm: str) -> str:
     return mysql["pb_characters_db"] if realm == "playerbot" else mysql["characters_db"]
 
 
+ITEM_CLASSES = {
+    0: ("Verbrauchbar", {0: "Verbrauchbar", 1: "Trank", 2: "Elixier", 3: "Fläschchen", 4: "Schriftrolle", 5: "Essen & Trinken", 6: "Itemverbesserung", 7: "Bandage", 8: "Sonstiges"}),
+    1: ("Taschen", {0: "Tasche", 1: "Seelentasche", 2: "Kräutertasche", 3: "Verzauberertasche", 4: "Ingenieurstasche", 5: "Edelsteintasche", 6: "Bergbautasche", 7: "Lederertasche", 8: "Inschriftlertasche"}),
+    2: ("Waffen", {0: "Einhändige Axt", 1: "Zweihändige Axt", 2: "Bogen", 3: "Schusswaffe", 4: "Einhändiger Streitkolben", 5: "Zweihändiger Streitkolben", 6: "Stangenwaffe", 7: "Einhändiges Schwert", 8: "Zweihändiges Schwert", 10: "Stab", 13: "Faustwaffe", 14: "Sonstige Waffe", 15: "Dolch", 16: "Wurfwaffe", 18: "Armbrust", 19: "Zauberstab", 20: "Angel"}),
+    3: ("Edelsteine", {0: "Rot", 1: "Blau", 2: "Gelb", 3: "Violett", 4: "Grün", 5: "Orange", 6: "Meta", 7: "Einfach", 8: "Prismatisch"}),
+    4: ("Rüstung", {0: "Sonstige Rüstung", 1: "Stoff", 2: "Leder", 3: "Kette", 4: "Platte", 6: "Schild", 7: "Buchband", 8: "Götze", 9: "Totem", 10: "Siegel"}),
+    5: ("Reagenzien", {0: "Reagenz"}),
+    6: ("Munition", {2: "Pfeile", 3: "Kugeln"}),
+    7: ("Handwerkswaren", {0: "Handwerksware", 1: "Teile", 2: "Sprengstoff", 3: "Geräte", 4: "Juwelenschleifen", 5: "Stoff", 6: "Leder", 7: "Metall & Stein", 8: "Fleisch", 9: "Kräuter", 10: "Elementar", 11: "Sonstiges", 12: "Verzaubern", 13: "Materialien", 14: "Rüstungsvz.", 15: "Waffenvz."}),
+    8: ("Allgemein", {0: "Allgemein"}),
+    9: ("Rezepte", {0: "Buch", 1: "Lederverarbeitung", 2: "Schneiderei", 3: "Ingenieurskunst", 4: "Schmiedekunst", 5: "Kochkunst", 6: "Alchemie", 7: "Erste Hilfe", 8: "Verzauberkunst", 9: "Angeln", 10: "Juwelenschleifen"}),
+    10: ("Geld", {0: "Geld"}),
+    11: ("Köcher", {2: "Köcher", 3: "Munitionsbeutel"}),
+    12: ("Questitems", {0: "Questitem"}),
+    13: ("Schlüssel", {0: "Schlüssel", 1: "Dietrich"}),
+    14: ("Permanent", {0: "Permanent"}),
+    15: ("Verschiedenes", {0: "Plunder", 1: "Reagenz", 2: "Begleiter", 3: "Feiertag", 4: "Sonstiges", 5: "Reittier"}),
+    16: ("Glyphen", {1: "Krieger", 2: "Paladin", 3: "Jäger", 4: "Schurke", 5: "Priester", 6: "Todesritter", 7: "Schamane", 8: "Magier", 9: "Hexenmeister", 11: "Druide"}),
+}
+
+ITEM_QUALITIES = {
+    0: "Schlecht", 1: "Gewöhnlich", 2: "Ungewöhnlich", 3: "Selten",
+    4: "Episch", 5: "Legendär", 6: "Artefakt", 7: "Erbstück",
+}
+
+INVENTORY_TYPES = {
+    0: "-", 1: "Kopf", 2: "Hals", 3: "Schulter", 4: "Hemd", 5: "Brust",
+    6: "Taille", 7: "Beine", 8: "Füße", 9: "Handgelenk", 10: "Hände",
+    11: "Finger", 12: "Schmuck", 13: "Einhändig", 14: "Schild", 15: "Distanz",
+    16: "Rücken", 17: "Zweihändig", 18: "Tasche", 19: "Wappenrock",
+    20: "Robe", 21: "Waffenhand", 22: "Schildhand", 23: "In Nebenhand",
+    24: "Munition", 25: "Wurfwaffe", 26: "Distanz rechts", 28: "Relikt",
+}
+
+
+def item_class_options() -> list[dict]:
+    return [{"id": key, "label": value[0], "subclasses": value[1]} for key, value in sorted(ITEM_CLASSES.items())]
+
+
+def item_subclass_label(item_class: int, subclass: int) -> str:
+    return ITEM_CLASSES.get(int(item_class), (f"Klasse {item_class}", {}))[1].get(int(subclass), f"Unterklasse {subclass}")
+
+
+def item_class_label(item_class: int) -> str:
+    return ITEM_CLASSES.get(int(item_class), (f"Klasse {item_class}", {}))[0]
+
+
+def item_quality_label(quality: int) -> str:
+    return ITEM_QUALITIES.get(int(quality), f"Qualität {quality}")
+
+
+def inventory_type_label(inventory_type: int) -> str:
+    return INVENTORY_TYPES.get(int(inventory_type), str(inventory_type))
+
+
+def search_items(cfg: dict, filters: dict) -> dict:
+    mysql = cfg["mysql"]
+    limit = max(25, min(int(filters.get("limit") or 100), 500))
+    page = max(1, int(filters.get("page") or 1))
+    offset = (page - 1) * limit
+    where = []
+    params = {"limit": limit, "offset": offset}
+
+    query = str(filters.get("q") or "").strip()
+    if query:
+        if query.isdigit():
+            where.append("(entry = :entry OR name LIKE :likeq)")
+            params["entry"] = int(query)
+        else:
+            where.append("name LIKE :likeq")
+        params["likeq"] = f"%{query}%"
+
+    item_class = filters.get("item_class")
+    if item_class not in (None, ""):
+        where.append("class = :class")
+        params["class"] = int(item_class)
+
+    subclass = filters.get("subclass")
+    if subclass not in (None, ""):
+        where.append("subclass = :subclass")
+        params["subclass"] = int(subclass)
+
+    quality = filters.get("quality")
+    if quality not in (None, ""):
+        where.append("Quality = :quality")
+        params["quality"] = int(quality)
+
+    min_level = filters.get("min_level")
+    if min_level not in (None, ""):
+        where.append("ItemLevel >= :min_level")
+        params["min_level"] = int(min_level)
+
+    max_level = filters.get("max_level")
+    if max_level not in (None, ""):
+        where.append("ItemLevel <= :max_level")
+        params["max_level"] = int(max_level)
+
+    clause = "WHERE " + " AND ".join(where) if where else ""
+    order = "class, subclass, ItemLevel, RequiredLevel, name"
+    if filters.get("sort") == "level_desc":
+        order = "ItemLevel DESC, RequiredLevel DESC, class, subclass, name"
+    elif filters.get("sort") == "name":
+        order = "name, ItemLevel, entry"
+
+    count = scalar(mysql, mysql["world_db"], f"SELECT COUNT(*) FROM item_template {clause}", params) or 0
+    sql = f"""
+    SELECT entry, name, class, subclass, Quality, ItemLevel, RequiredLevel, InventoryType,
+           stackable, ContainerSlots, SellPrice, bonding, description
+    FROM item_template
+    {clause}
+    ORDER BY {order}
+    LIMIT :limit OFFSET :offset
+    """
+    data = rows(mysql, mysql["world_db"], sql, params)
+    for row in data:
+        row["class_label"] = item_class_label(row["class"])
+        row["subclass_label"] = item_subclass_label(row["class"], row["subclass"])
+        row["quality_label"] = item_quality_label(row["Quality"])
+        row["inventory_label"] = inventory_type_label(row["InventoryType"])
+    return {"items": data, "total": int(count), "page": page, "limit": limit, "pages": max(1, (int(count) + limit - 1) // limit)}
+
+
 def character_detail(cfg: dict, realm: str, guid: int) -> dict | None:
     mysql = cfg["mysql"]
     char_db = character_database(mysql, realm)

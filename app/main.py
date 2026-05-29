@@ -60,6 +60,7 @@ def create_app() -> FastAPI:
     app.add_api_route("/accounts/{account_id}", account_detail, methods=["GET"], response_class=HTMLResponse)
     app.add_api_route("/accounts/{account_id}/save", account_save, methods=["POST"])
     app.add_api_route("/accounts/{account_id}/delete", account_delete, methods=["POST"])
+    app.add_api_route("/items", items, methods=["GET"], response_class=HTMLResponse)
     app.add_api_route("/characters", characters, methods=["GET"], response_class=HTMLResponse)
     app.add_api_route("/characters/{realm}/{guid}", character_detail, methods=["GET"], response_class=HTMLResponse)
     app.add_api_route("/characters/{realm}/{guid}/save", character_save, methods=["POST"])
@@ -335,6 +336,38 @@ def account_delete(request: Request, account_id: int, db: Session = Depends(get_
     log_action(db, user.id, "account_delete", str(account_id), username, request.client.host if request.client else None)
     request.session["account_error"] = f"Account {username} wurde gelöscht."
     return RedirectResponse("/accounts", status_code=303)
+
+
+def items(request: Request, db: Session = Depends(get_db), user: PanelUser = Depends(require_level(1))):
+    filters = {
+        "q": request.query_params.get("q", ""),
+        "item_class": request.query_params.get("item_class", ""),
+        "subclass": request.query_params.get("subclass", ""),
+        "quality": request.query_params.get("quality", ""),
+        "min_level": request.query_params.get("min_level", ""),
+        "max_level": request.query_params.get("max_level", ""),
+        "sort": request.query_params.get("sort", "group"),
+        "limit": request.query_params.get("limit", "100"),
+        "page": request.query_params.get("page", "1"),
+    }
+    try:
+        result = wowdb.search_items(all_config(db), filters)
+        error = None
+    except Exception as exc:
+        result = {"items": [], "total": 0, "page": 1, "limit": 100, "pages": 1}
+        error = str(exc)
+    return render(request, "items.html", {
+        "title": "Items",
+        "items": result["items"],
+        "total": result["total"],
+        "page": result["page"],
+        "pages": result["pages"],
+        "limit": result["limit"],
+        "filters": filters,
+        "item_classes": wowdb.item_class_options(),
+        "qualities": wowdb.ITEM_QUALITIES,
+        "error": error,
+    }, db)
 
 
 def characters(request: Request, q: str = "", db: Session = Depends(get_db), user: PanelUser = Depends(require_level(1))):

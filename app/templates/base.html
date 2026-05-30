@@ -5,10 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{{ title }} - WoW GM Webpanel</title>
   <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
-  <link rel="stylesheet" href="/static/css/app.css">
-  <script defer src="/static/js/app.js"></script>
+  <link rel="stylesheet" href="/static/css/app.css?v={{ static_version|default('20260530-2') }}">
+  <script defer src="/static/js/app.js?v={{ static_version|default('20260530-2') }}"></script>
 </head>
-<body>
+<body class="{{ body_class|default('') }}">
 <aside class="sidebar">
   <div class="brand">WoW GM<br><span>Webpanel</span></div>
   {% if user %}

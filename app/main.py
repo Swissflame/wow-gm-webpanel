@@ -366,6 +366,8 @@ def items(request: Request, db: Session = Depends(get_db), user: PanelUser = Dep
         error = str(exc)
     return render(request, "items.html", {
         "title": "Items",
+        "body_class": "items-browser-active",
+        "static_version": "20260530-3",
         "items": result["items"],
         "total": result["total"],
         "page": result["page"],

@@ -26,34 +26,13 @@
           {% endfor %}
         </select>
       </label>
-      <label>Ausrüstung
-        <select name="inventory_type">
-          <option value="">Alle Plätze</option>
-          {% for inv_id, inv_label in inventory_types.items() %}
-          <option value="{{ inv_id }}" {% if filters.inventory_type|string == inv_id|string %}selected{% endif %}>{{ inv_label }}</option>
-          {% endfor %}
-        </select>
-      </label>
-      <label>Bindung
-        <select name="bonding">
-          <option value="">Alle Bindungen</option>
-          {% for bind_id, bind_label in bonding_types.items() %}
-          <option value="{{ bind_id }}" {% if filters.bonding|string == bind_id|string %}selected{% endif %}>{{ bind_label }}</option>
-          {% endfor %}
-        </select>
-      </label>
-      <label>Sortierung
-        <select name="sort">
-          <option value="group" {% if filters.sort == "group" %}selected{% endif %}>Kategorie</option>
-          <option value="level_desc" {% if filters.sort == "level_desc" %}selected{% endif %}>Level absteigend</option>
-          <option value="name" {% if filters.sort == "name" %}selected{% endif %}>Name</option>
-          <option value="entry" {% if filters.sort == "entry" %}selected{% endif %}>Itemnummer</option>
-        </select>
-      </label>
-      <label class="ah-check"><input name="stackable" value="stack" type="checkbox" {% if filters.stackable == "stack" %}checked{% endif %}> Stapelbar</label>
-      <label class="ah-check"><input name="min_slots" value="1" type="checkbox" {% if filters.min_slots %}checked{% endif %}> Behälter</label>
+      <label class="ah-check"><input name="stackable" value="stack" type="checkbox" {% if filters.stackable == "stack" %}checked{% endif %}> Stapelbare Gegenstände</label>
+      <label class="ah-check"><input name="min_slots" value="1" type="checkbox" {% if filters.min_slots %}checked{% endif %}> Nur Taschen</label>
       <input type="hidden" name="item_class" value="{{ filters.item_class }}">
       <input type="hidden" name="subclass" value="{{ filters.subclass }}">
+      <input type="hidden" name="inventory_type" value="{{ filters.inventory_type }}">
+      <input type="hidden" name="bonding" value="{{ filters.bonding }}">
+      <input type="hidden" name="sort" value="{{ filters.sort or 'group' }}">
       <input type="hidden" name="limit" value="{{ limit }}">
       <button class="ah-search-button" type="submit">Suchen</button>
       <a class="ah-reset" href="/items">Zurücksetzen</a>

@@ -145,6 +145,9 @@ function syncFavorites() {
 
 document.addEventListener("DOMContentLoaded", syncFavorites);
 document.addEventListener("DOMContentLoaded", () => {
+  if (document.querySelector(".ah-style-page")) {
+    document.body.classList.add("items-browser-active");
+  }
   const params = new URLSearchParams(window.location.search);
   const id = params.get("tab") || sessionStorage.getItem("wowpanel.gmActiveTab");
   if (!id) return;

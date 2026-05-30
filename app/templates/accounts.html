@@ -42,7 +42,7 @@
   {% for a in items %}
   <tr>
     <td>{{ a.id }}</td>
-    <td><a href="/accounts/{{ a.id }}" target="_blank" rel="noopener">{{ a.username }}</a></td>
+    <td><a href="/accounts/{{ a.id }}">{{ a.username }}</a></td>
     <td>{{ a.email }}</td>
     <td>{{ a.gm_level }}</td>
     <td>Normal {{ a.normal_chars }} · Playerbot {{ a.playerbot_chars }}</td>

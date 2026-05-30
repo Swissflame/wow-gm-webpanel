@@ -26,13 +26,45 @@
           {% endfor %}
         </select>
       </label>
-      <label class="ah-check"><input name="stackable" value="stack" type="checkbox" {% if filters.stackable == "stack" %}checked{% endif %}> Stapelbare Gegenstände</label>
-      <label class="ah-check"><input name="min_slots" value="1" type="checkbox" {% if filters.min_slots %}checked{% endif %}> Nur Taschen</label>
-      <input type="hidden" name="item_class" value="{{ filters.item_class }}">
-      <input type="hidden" name="subclass" value="{{ filters.subclass }}">
+      {% if filters.item_class %}
+      <label>Unterart
+        <select name="subclass">
+          <option value="">Alle</option>
+          {% for cls in item_classes %}
+            {% if filters.item_class|string == cls.id|string %}
+              {% for sub_id, sub_label in cls.subclasses.items() %}
+              <option value="{{ sub_id }}" {% if filters.subclass|string == sub_id|string %}selected{% endif %}>{{ sub_label }}</option>
+              {% endfor %}
+            {% endif %}
+          {% endfor %}
+        </select>
+      </label>
+      {% endif %}
+      {% if filters.item_class|string in ["2", "4"] %}
+      <label>Platz
+        <select name="inventory_type">
+          <option value="">Alle</option>
+          {% for inv_id, inv_label in inventory_types.items() %}
+          <option value="{{ inv_id }}" {% if filters.inventory_type|string == inv_id|string %}selected{% endif %}>{{ inv_label }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      {% else %}
       <input type="hidden" name="inventory_type" value="{{ filters.inventory_type }}">
+      {% endif %}
+      <label>Sortierung
+        <select name="sort">
+          <option value="group" {% if filters.sort == "group" %}selected{% endif %}>Kategorie</option>
+          <option value="level_desc" {% if filters.sort == "level_desc" %}selected{% endif %}>Itemlevel</option>
+          <option value="name" {% if filters.sort == "name" %}selected{% endif %}>Name</option>
+          <option value="entry" {% if filters.sort == "entry" %}selected{% endif %}>Itemnummer</option>
+        </select>
+      </label>
+      <input type="hidden" name="item_class" value="{{ filters.item_class }}">
+      {% if not filters.item_class %}<input type="hidden" name="subclass" value="{{ filters.subclass }}">{% endif %}
       <input type="hidden" name="bonding" value="{{ filters.bonding }}">
-      <input type="hidden" name="sort" value="{{ filters.sort or 'group' }}">
+      <input type="hidden" name="stackable" value="">
+      <input type="hidden" name="min_slots" value="">
       <input type="hidden" name="limit" value="{{ limit }}">
       <button class="ah-search-button" type="submit">Suchen</button>
       <a class="ah-reset" href="/items">Zurücksetzen</a>
@@ -62,17 +94,17 @@
     <section class="ah-results-panel">
       <div class="ah-table-head">
         <span>Seltenheit</span>
+        <span>ID</span>
         <span>St.</span>
         <span>Art</span>
         <span>Bindung</span>
-        <span>Verkauf</span>
       </div>
       <div class="ah-results-scroll">
         {% if not items and not error %}
         <div class="ah-empty">Suchkriterien wählen oder Namen eingeben.</div>
         {% endif %}
         {% for item in items %}
-        <article class="ah-item-row">
+        <article class="ah-item-row item-tooltip-source" data-tooltip="{{ item.tooltip|e }}">
           <div class="ah-item-main">
             <span class="item-icon ah-item-icon" title="{{ item.icon_name or 'Kein Iconname' }}">
               {% if item.icon_slug %}
@@ -83,32 +115,22 @@
               {% endif %}
             </span>
             <div class="ah-item-name">
-              <strong class="quality-{{ item.Quality }}">{{ item.display_name }}</strong>
+              <strong class="quality-{{ item.Quality }} copy-value" data-copy="{{ item.display_name }}" title="Namen kopieren">{{ item.display_name }}</strong>
               {% if item.display_name != item.name %}<small>{{ item.name }}</small>{% endif %}
               {% if item.display_description %}<small>{{ item.display_description }}</small>{% endif %}
-              <em>ID {{ item.entry }} · {{ item.class_label }} · {{ item.subclass_label }}</em>
+              <em>{{ item.class_label }} · {{ item.subclass_label }}</em>
             </div>
           </div>
+          <div class="ah-item-id copy-value" data-copy="{{ item.entry }}" title="Itemnummer kopieren">{{ item.entry }}</div>
           <div class="ah-item-level">{{ item.RequiredLevel or item.ItemLevel }}</div>
           <div class="ah-item-type">{{ item.inventory_label }}<small>Itemlevel {{ item.ItemLevel }}</small></div>
           <div class="ah-item-bind">{{ item.bonding_label }}<small>Stack {{ item.stackable }}</small></div>
-          <div class="ah-price">
-            <span>{{ item.sell_gold }}<b class="coin gold"></b></span>
-            <span>{{ item.sell_silver }}<b class="coin silver"></b></span>
-            <span>{{ item.sell_copper }}<b class="coin copper"></b></span>
-          </div>
         </article>
         {% endfor %}
       </div>
-      <form class="ah-pager" method="get">
-        {% for key, value in filters.items() %}
-          {% if key != "page" %}<input type="hidden" name="{{ key }}" value="{{ value }}">{% endif %}
-        {% endfor %}
-        <button name="page" value="{{ [page - 1, 1]|max }}" {% if page <= 1 %}disabled{% endif %}>‹ Zurück</button>
-        <span>Seite {{ page }} / {{ pages }}</span>
-        <button name="page" value="{{ [page + 1, pages]|min }}" {% if page >= pages %}disabled{% endif %}>Weiter ›</button>
-      </form>
+      <div class="ah-footer-note">Zeige bis zu {{ limit }} Treffer. Itemname oder ID anklicken kopiert den Wert.</div>
     </section>
   </div>
+  <div id="itemTooltip" class="item-tooltip" hidden></div>
 </section>
 {% endblock %}

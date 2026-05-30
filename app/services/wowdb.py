@@ -200,6 +200,18 @@ BONDING_TYPES = {
 
 ITEM_ICON_MAP: dict[str, str] | None = None
 
+ITEM_STAT_TYPES = {
+    3: "Beweglichkeit", 4: "Stärke", 5: "Intelligenz", 6: "Willenskraft", 7: "Ausdauer",
+    12: "Verteidigungswertung", 13: "Ausweichwertung", 14: "Parierwertung", 15: "Blockwertung",
+    16: "Trefferwertung Nahkampf", 17: "Trefferwertung Distanz", 18: "Trefferwertung Zauber",
+    19: "Kritische Trefferwertung Nahkampf", 20: "Kritische Trefferwertung Distanz", 21: "Kritische Trefferwertung Zauber",
+    28: "Tempowertung Nahkampf", 29: "Tempowertung Distanz", 30: "Tempowertung Zauber",
+    31: "Trefferwertung", 32: "Kritische Trefferwertung", 35: "Abhärtungswertung",
+    36: "Tempowertung", 37: "Waffenkundewertung", 38: "Angriffskraft", 39: "Distanzangriffskraft",
+    41: "Heilung", 42: "Zauberschaden", 43: "Mana pro 5 Sek.", 44: "Rüstungsdurchschlagwertung",
+    45: "Zaubermacht", 46: "Gesundheit pro 5 Sek.", 47: "Zauberdurchschlag", 48: "Blockwert",
+}
+
 
 def item_class_options() -> list[dict]:
     return [{"id": key, "label": value[0], "subclasses": value[1]} for key, value in sorted(ITEM_CLASSES.items())]
@@ -231,6 +243,10 @@ def inventory_type_label(inventory_type: int) -> str:
 
 def bonding_label(bonding: int) -> str:
     return BONDING_TYPES.get(int(bonding), str(bonding))
+
+
+def item_stat_label(stat_type: int) -> str:
+    return ITEM_STAT_TYPES.get(int(stat_type), f"Stat {stat_type}")
 
 
 def item_icon_map() -> dict[str, str]:
@@ -336,7 +352,13 @@ def search_items(cfg: dict, filters: dict, lang: str = "de") -> dict:
     SELECT i.entry, i.name, {name_expr} AS display_name, {desc_expr} AS display_description,
            i.class, i.subclass, i.Quality, i.ItemLevel,
            i.RequiredLevel, i.InventoryType, i.stackable, i.ContainerSlots, i.SellPrice,
-           i.bonding, i.description, i.displayid, d.InventoryIcon_1 AS icon_name
+           i.bonding, i.description, i.displayid, i.armor, i.delay,
+           i.dmg_min1, i.dmg_max1,
+           i.stat_type1, i.stat_value1, i.stat_type2, i.stat_value2, i.stat_type3, i.stat_value3,
+           i.stat_type4, i.stat_value4, i.stat_type5, i.stat_value5, i.stat_type6, i.stat_value6,
+           i.stat_type7, i.stat_value7, i.stat_type8, i.stat_value8, i.stat_type9, i.stat_value9,
+           i.stat_type10, i.stat_value10,
+           d.InventoryIcon_1 AS icon_name
     FROM item_template i
     {locale_join}
     LEFT JOIN itemdisplayinfo_dbc d ON d.ID = i.displayid
@@ -360,6 +382,31 @@ def search_items(cfg: dict, filters: dict, lang: str = "de") -> dict:
         row["sell_gold"] = sell_price // 10000
         row["sell_silver"] = (sell_price % 10000) // 100
         row["sell_copper"] = sell_price % 100
+        stats = []
+        for index in range(1, 11):
+            stat_type = int(row.get(f"stat_type{index}") or 0)
+            stat_value = int(row.get(f"stat_value{index}") or 0)
+            if stat_type and stat_value:
+                stats.append({"label": item_stat_label(stat_type), "value": stat_value})
+        row["stats"] = stats
+        tooltip_lines = [
+            row["display_name"],
+            row["bonding_label"],
+            row["inventory_label"],
+            f"{row['ItemLevel']} Itemlevel",
+        ]
+        if row.get("RequiredLevel"):
+            tooltip_lines.append(f"Benötigt Stufe {row['RequiredLevel']}")
+        if row.get("armor"):
+            tooltip_lines.append(f"{row['armor']} Rüstung")
+        for stat in stats:
+            sign = "+" if int(stat["value"]) > 0 else ""
+            tooltip_lines.append(f"{sign}{stat['value']} {stat['label']}")
+        if row.get("dmg_min1") or row.get("dmg_max1"):
+            tooltip_lines.append(f"{row.get('dmg_min1') or 0:g} - {row.get('dmg_max1') or 0:g} Schaden")
+        if row.get("display_description"):
+            tooltip_lines.append(str(row["display_description"]))
+        row["tooltip"] = "\n".join(str(line) for line in tooltip_lines if line)
     return {"items": data, "total": int(count), "page": page, "limit": limit, "pages": max(1, (int(count) + limit - 1) // limit)}
 
 

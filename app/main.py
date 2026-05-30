@@ -353,7 +353,7 @@ def items(request: Request, db: Session = Depends(get_db), user: PanelUser = Dep
         "min_slots": request.query_params.get("min_slots", ""),
         "stackable": request.query_params.get("stackable", ""),
         "sort": request.query_params.get("sort", "group"),
-        "limit": request.query_params.get("limit", "100"),
+        "limit": request.query_params.get("limit", "500"),
         "page": request.query_params.get("page", "1"),
     }
     cfg = all_config(db)
@@ -367,7 +367,7 @@ def items(request: Request, db: Session = Depends(get_db), user: PanelUser = Dep
     return render(request, "items.html", {
         "title": "Items",
         "body_class": "items-browser-active",
-        "static_version": "20260530-3",
+        "static_version": "20260530-4",
         "items": result["items"],
         "total": result["total"],
         "page": result["page"],

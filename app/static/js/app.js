@@ -17,6 +17,16 @@ document.addEventListener("keydown", (event) => {
 });
 
 document.addEventListener("click", (event) => {
+  const copyTarget = event.target.closest(".copy-value");
+  if (copyTarget) {
+    const value = copyTarget.dataset.copy || copyTarget.textContent.trim();
+    navigator.clipboard?.writeText(value).then(() => {
+      copyTarget.classList.add("copied");
+      setTimeout(() => copyTarget.classList.remove("copied"), 600);
+    }).catch(() => {});
+    event.preventDefault();
+    return;
+  }
   const tab = event.target.closest(".gm-tab");
   if (tab) {
     const id = tab.dataset.tab;
@@ -50,6 +60,15 @@ document.addEventListener("click", (event) => {
 });
 
 document.addEventListener("mouseover", (event) => {
+  const itemTipSource = event.target.closest(".item-tooltip-source");
+  const itemTooltip = document.querySelector("#itemTooltip");
+  if (itemTipSource && itemTooltip) {
+    const lines = (itemTipSource.dataset.tooltip || "").split("\n").filter(Boolean);
+    const [name, ...rest] = lines;
+    itemTooltip.innerHTML = `<span class="tip-name">${escapeHtml(name || "")}</span>${rest.map((line) => `<span class="tip-muted">${escapeHtml(line)}</span>`).join("\n")}`;
+    itemTooltip.hidden = false;
+    return;
+  }
   const item = event.target.closest(".raw-command-chips [data-command]");
   const tooltip = document.querySelector("#gmTooltip");
   if (!item || !tooltip) return;
@@ -69,6 +88,13 @@ document.addEventListener("mouseover", (event) => {
 });
 
 document.addEventListener("mousemove", (event) => {
+  const itemTooltip = document.querySelector("#itemTooltip");
+  if (itemTooltip && !itemTooltip.hidden) {
+    const x = Math.min(event.clientX + 18, window.innerWidth - itemTooltip.offsetWidth - 18);
+    const y = Math.min(event.clientY + 18, window.innerHeight - itemTooltip.offsetHeight - 18);
+    itemTooltip.style.left = `${x}px`;
+    itemTooltip.style.top = `${y}px`;
+  }
   const tooltip = document.querySelector("#gmTooltip");
   if (!tooltip || tooltip.hidden) return;
   const x = Math.min(event.clientX + 18, window.innerWidth - tooltip.offsetWidth - 18);
@@ -78,6 +104,10 @@ document.addEventListener("mousemove", (event) => {
 });
 
 document.addEventListener("mouseout", (event) => {
+  if (event.target.closest(".item-tooltip-source")) {
+    const itemTooltip = document.querySelector("#itemTooltip");
+    if (itemTooltip) itemTooltip.hidden = true;
+  }
   if (!event.target.closest(".raw-command-chips [data-command]")) return;
   const tooltip = document.querySelector("#gmTooltip");
   if (tooltip) tooltip.hidden = true;

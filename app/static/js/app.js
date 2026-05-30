@@ -155,6 +155,25 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 });
 
+document.addEventListener("DOMContentLoaded", () => {
+  document.querySelectorAll("form[data-auto-submit='true']").forEach((form) => {
+    let timer = null;
+    const submit = (delay = 0) => {
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        const page = form.querySelector("input[name='page']");
+        if (page) page.value = "1";
+        form.requestSubmit();
+      }, delay);
+    };
+    form.querySelectorAll("input,select").forEach((field) => {
+      if (field.type === "hidden") return;
+      field.addEventListener("change", () => submit(0));
+      field.addEventListener("input", () => submit(450));
+    });
+  });
+});
+
 document.addEventListener("input", (event) => {
   if (event.target.id !== "configFilter") return;
   const needle = event.target.value.toLowerCase();

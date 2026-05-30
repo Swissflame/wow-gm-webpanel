@@ -356,6 +356,10 @@ def search_items(cfg: dict, filters: dict, lang: str = "de") -> dict:
         row["bonding_label"] = bonding_label(row["bonding"])
         row["icon_slug"] = str(row.get("icon_name") or "").lower() or local_icon_map.get(str(row.get("displayid") or ""))
         row["icon_name"] = row.get("icon_name") or row["icon_slug"]
+        sell_price = int(row.get("SellPrice") or 0)
+        row["sell_gold"] = sell_price // 10000
+        row["sell_silver"] = (sell_price % 10000) // 100
+        row["sell_copper"] = sell_price % 100
     return {"items": data, "total": int(count), "page": page, "limit": limit, "pages": max(1, (int(count) + limit - 1) // limit)}
 
 

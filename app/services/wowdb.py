@@ -1,6 +1,8 @@
 from contextlib import contextmanager
 from datetime import datetime
+import json
 import os
+from pathlib import Path
 from sqlalchemy import create_engine, text
 from sqlalchemy.engine import Engine
 
@@ -196,6 +198,8 @@ BONDING_TYPES = {
     3: "Beim Benutzen gebunden", 4: "Questitem", 5: "Questitem",
 }
 
+ITEM_ICON_MAP: dict[str, str] | None = None
+
 
 def item_class_options() -> list[dict]:
     return [{"id": key, "label": value[0], "subclasses": value[1]} for key, value in sorted(ITEM_CLASSES.items())]
@@ -227,6 +231,17 @@ def inventory_type_label(inventory_type: int) -> str:
 
 def bonding_label(bonding: int) -> str:
     return BONDING_TYPES.get(int(bonding), str(bonding))
+
+
+def item_icon_map() -> dict[str, str]:
+    global ITEM_ICON_MAP
+    if ITEM_ICON_MAP is None:
+        path = Path(__file__).resolve().parents[1] / "static" / "item-icons" / "icon_map.json"
+        if path.exists():
+            ITEM_ICON_MAP = json.loads(path.read_text(encoding="utf-8"))
+        else:
+            ITEM_ICON_MAP = {}
+    return ITEM_ICON_MAP
 
 
 def search_items(cfg: dict, filters: dict, lang: str = "de") -> dict:
@@ -330,6 +345,7 @@ def search_items(cfg: dict, filters: dict, lang: str = "de") -> dict:
     LIMIT :limit OFFSET :offset
     """
     data = rows(mysql, mysql["world_db"], sql, params)
+    local_icon_map = item_icon_map()
     for row in data:
         row["display_name"] = row.get("display_name") or row.get("name") or f"Item {row['entry']}"
         row["display_description"] = row.get("display_description") or row.get("description") or ""
@@ -338,7 +354,8 @@ def search_items(cfg: dict, filters: dict, lang: str = "de") -> dict:
         row["quality_label"] = item_quality_label(row["Quality"])
         row["inventory_label"] = inventory_type_label(row["InventoryType"])
         row["bonding_label"] = bonding_label(row["bonding"])
-        row["icon_slug"] = str(row.get("icon_name") or "").lower()
+        row["icon_slug"] = str(row.get("icon_name") or "").lower() or local_icon_map.get(str(row.get("displayid") or ""))
+        row["icon_name"] = row.get("icon_name") or row["icon_slug"]
     return {"items": data, "total": int(count), "page": page, "limit": limit, "pages": max(1, (int(count) + limit - 1) // limit)}
 
 

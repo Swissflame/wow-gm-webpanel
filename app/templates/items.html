@@ -5,7 +5,7 @@
   <div class="items-workbench">
     <aside class="panel item-filter-rail">
       <h2>Itemdatenbank</h2>
-      <p class="hint">Deutsche Namen werden aus der AzerothCore-Locale-Tabelle gelesen. Falls der Server Iconnamen liefert, werden sie angezeigt; sonst bleibt bewusst ein Platzhalter.</p>
+      <p class="hint">Deutsche Namen werden aus der AzerothCore-Locale-Tabelle gelesen. Die Itembilder kommen aus dem bereitgestellten 3.3.5a-Client.</p>
 
       <div class="quick-filters">
         <a href="/items?item_class=4&subclass=1&sort=level_desc">Ruestung &gt; Stoff</a>
@@ -140,7 +140,12 @@
           <tr>
             <td>
               <span class="item-icon" title="{{ item.icon_name or 'Kein Iconname' }}">
-                {% if item.icon_name %}<span>{{ item.icon_name[:2]|upper }}</span>{% else %}<span>?</span>{% endif %}
+                {% if item.icon_slug %}
+                <img src="/static/item-icons/{{ item.icon_slug }}.png" alt="">
+                <span>{{ item.icon_name[:2]|upper }}</span>
+                {% else %}
+                <span>?</span>
+                {% endif %}
               </span>
             </td>
             <td><code>{{ item.entry }}</code></td>
